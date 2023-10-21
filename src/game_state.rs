@@ -88,7 +88,7 @@ type gameState struct {
 }
 
 // Create a new game state with default values
-func newGameState() *gameState {
+fn newGameState() *gameState {
 
 	// New game state object
 	gs := gameState{
@@ -144,7 +144,7 @@ func newGameState() *gameState {
 /**************************** Curr Ticks Functions ****************************/
 
 // Helper function to get the current ticks
-func (gs *gameState) getCurrTicks() uint16 {
+fn (gs *gameState) getCurrTicks() uint16 {
 
 	// (Read) lock the current ticks
 	gs.muTicks.RLock()
@@ -155,7 +155,7 @@ func (gs *gameState) getCurrTicks() uint16 {
 }
 
 // Helper function to increment the current ticks
-func (gs *gameState) nextTick() {
+fn (gs *gameState) nextTick() {
 
 	// Get the current number of ticks
 	currTicks := gs.getCurrTicks()
@@ -179,7 +179,7 @@ func (gs *gameState) nextTick() {
 /**************************** Upd Period Functions ****************************/
 
 // Helper function to get the update period
-func (gs *gameState) getUpdatePeriod() uint8 {
+fn (gs *gameState) getUpdatePeriod() uint8 {
 
 	// (Read) lock the update period
 	gs.muPeriod.RLock()
@@ -190,7 +190,7 @@ func (gs *gameState) getUpdatePeriod() uint8 {
 }
 
 // Helper function to set the update period
-func (gs *gameState) setUpdatePeriod(period uint8) {
+fn (gs *gameState) setUpdatePeriod(period uint8) {
 
 	// Send a message to the terminal
 	log.Printf("\033[36mGAME: Update period changed (%d -> %d) (t = %d)\033[0m\n",
@@ -211,7 +211,7 @@ func (gs *gameState) setUpdatePeriod(period uint8) {
 /**************************** Game Score Functions ****************************/
 
 // Helper function to get the current score of the game
-func (gs *gameState) getScore() uint16 {
+fn (gs *gameState) getScore() uint16 {
 
 	// (Read) lock the current score
 	gs.muScore.RLock()
@@ -222,7 +222,7 @@ func (gs *gameState) getScore() uint16 {
 }
 
 // (For performance) helper function to increment the current score of the game
-func (gs *gameState) incrementScore(change uint16) {
+fn (gs *gameState) incrementScore(change uint16) {
 
 	// Calculate the next score, capping at the maximum 16-bit unsigned int
 	score := uint32(gs.currScore)
@@ -239,7 +239,7 @@ func (gs *gameState) incrementScore(change uint16) {
 /**************************** Game Level Functions ****************************/
 
 // Helper function to get the current level of the game
-func (gs *gameState) getLevel() uint8 {
+fn (gs *gameState) getLevel() uint8 {
 
 	// (Read) lock the current level
 	gs.muLevel.RLock()
@@ -250,7 +250,7 @@ func (gs *gameState) getLevel() uint8 {
 }
 
 // Helper function to set the current level of the game
-func (gs *gameState) setLevel(level uint8) {
+fn (gs *gameState) setLevel(level uint8) {
 
 	// (Write) lock the current level
 	gs.muLevel.Lock()
@@ -265,7 +265,7 @@ func (gs *gameState) setLevel(level uint8) {
 }
 
 // Helper function to increment the game level
-func (gs *gameState) incrementLevel() {
+fn (gs *gameState) incrementLevel() {
 
 	// Keep track of the current level
 	level := gs.getLevel()
@@ -294,7 +294,7 @@ func (gs *gameState) incrementLevel() {
 /**************************** Game Level Functions ****************************/
 
 // Helper function to get the lives left
-func (gs *gameState) getLives() uint8 {
+fn (gs *gameState) getLives() uint8 {
 
 	// (Read) lock the current lives
 	gs.muLives.RLock()
@@ -305,7 +305,7 @@ func (gs *gameState) getLives() uint8 {
 }
 
 // Helper function to set the lives left
-func (gs *gameState) setLives(lives uint8) {
+fn (gs *gameState) setLives(lives uint8) {
 
 	// Send a message to the terminal
 	log.Printf("\033[36mGAME: Lives changed (%d -> %d)\033[0m\n",
@@ -320,7 +320,7 @@ func (gs *gameState) setLives(lives uint8) {
 }
 
 // Helper function to decrement the lives left
-func (gs *gameState) decrementLives() {
+fn (gs *gameState) decrementLives() {
 
 	// Keep track of how many lives Pacman has left
 	lives := gs.getLives()
@@ -345,7 +345,7 @@ func (gs *gameState) decrementLives() {
 /****************************** Pellet Functions ******************************/
 
 // Helper function to get the number of pellets
-func (gs *gameState) getNumPellets() uint16 {
+fn (gs *gameState) getNumPellets() uint16 {
 
 	// (Read) lock the number of pellets
 	gs.muPellets.RLock()
@@ -356,7 +356,7 @@ func (gs *gameState) getNumPellets() uint16 {
 }
 
 // Helper function to decrement the number of pellets
-func (gs *gameState) decrementNumPellets() {
+fn (gs *gameState) decrementNumPellets() {
 
 	// (Write) lock the number of pellets
 	gs.muPellets.Lock()
@@ -369,7 +369,7 @@ func (gs *gameState) decrementNumPellets() {
 }
 
 // Reset all the pellets on the board
-func (gs *gameState) resetPellets() {
+fn (gs *gameState) resetPellets() {
 
 	// (Write) lock the pellets array and number of pellets
 	gs.muPellets.Lock()
@@ -386,7 +386,7 @@ func (gs *gameState) resetPellets() {
 /************************** Fruit Spawning Functions **************************/
 
 // Helper function to get the number of steps until the fruit disappears
-func (gs *gameState) getFruitSteps() uint8 {
+fn (gs *gameState) getFruitSteps() uint8 {
 
 	// (Read) lock the fruit steps
 	gs.muFruit.RLock()
@@ -397,14 +397,14 @@ func (gs *gameState) getFruitSteps() uint8 {
 }
 
 // Helper function to determine whether fruit exists
-func (gs *gameState) fruitExists() bool {
+fn (gs *gameState) fruitExists() bool {
 
 	// Return whether fruit exists
 	return gs.getFruitSteps() > 0
 }
 
 // Helper function to set the number of steps until the fruit disappears
-func (gs *gameState) setFruitSteps(steps uint8) {
+fn (gs *gameState) setFruitSteps(steps uint8) {
 
 	// (Write) lock the fruit steps
 	gs.muFruit.Lock()
@@ -415,7 +415,7 @@ func (gs *gameState) setFruitSteps(steps uint8) {
 }
 
 // Helper function to decrement the number of fruit steps
-func (gs *gameState) decrementFruitSteps() {
+fn (gs *gameState) decrementFruitSteps() {
 
 	// (Write) lock the fruit steps
 	gs.muFruit.Lock()
@@ -430,7 +430,7 @@ func (gs *gameState) decrementFruitSteps() {
 /***************************** Level Steps Passed *****************************/
 
 // Helper function to get the number of steps until the level speeds up
-func (gs *gameState) getLevelSteps() uint16 {
+fn (gs *gameState) getLevelSteps() uint16 {
 
 	// (Read) lock the level steps
 	gs.muLevelSteps.RLock()
@@ -441,7 +441,7 @@ func (gs *gameState) getLevelSteps() uint16 {
 }
 
 // Helper function to set the number of steps until the level speeds up
-func (gs *gameState) setLevelSteps(steps uint16) {
+fn (gs *gameState) setLevelSteps(steps uint16) {
 
 	// (Write) lock the level steps
 	gs.muLevelSteps.Lock()
@@ -452,7 +452,7 @@ func (gs *gameState) setLevelSteps(steps uint16) {
 }
 
 // Helper function to decrement the number of steps until the mode changes
-func (gs *gameState) decrementLevelSteps() {
+fn (gs *gameState) decrementLevelSteps() {
 
 	// (Write) lock the level steps
 	gs.muLevelSteps.Lock()
@@ -467,7 +467,7 @@ func (gs *gameState) decrementLevelSteps() {
 /***************************** Step-Related Events ****************************/
 
 // Helper function to handle step-related events, if the mode steps hit 0
-func (gs *gameState) handleStepEvents() {
+fn (gs *gameState) handleStepEvents() {
 
 	// Get the current mode steps
 	modeSteps := gs.getModeSteps()

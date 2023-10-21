@@ -16,7 +16,7 @@ var modeNames [numModes]string = [...]string{
 /******************************** Current Mode ********************************/
 
 // Helper function to get the game mode
-func (gs *gameState) getMode() uint8 {
+fn (gs *gameState) getMode() uint8 {
 
 	// (Read) lock the game mode
 	gs.muMode.RLock()
@@ -27,7 +27,7 @@ func (gs *gameState) getMode() uint8 {
 }
 
 // Helper function to set the game mode
-func (gs *gameState) setMode(mode uint8) {
+fn (gs *gameState) setMode(mode uint8) {
 
 	// Read the current game mode
 	currMode := gs.getMode()
@@ -49,7 +49,7 @@ func (gs *gameState) setMode(mode uint8) {
 /***************************** Last Unpaused Mode *****************************/
 
 // Helper function to get the last unpaused mode
-func (gs *gameState) getLastUnpausedMode() uint8 {
+fn (gs *gameState) getLastUnpausedMode() uint8 {
 
 	// (Read) lock the game mode
 	gs.muMode.RLock()
@@ -65,7 +65,7 @@ func (gs *gameState) getLastUnpausedMode() uint8 {
 }
 
 // Helper function to set the game mode
-func (gs *gameState) setLastUnpausedMode(mode uint8) {
+fn (gs *gameState) setLastUnpausedMode(mode uint8) {
 
 	// Get the last unpaused mode
 	unpausedMode := gs.getLastUnpausedMode()
@@ -88,12 +88,12 @@ func (gs *gameState) setLastUnpausedMode(mode uint8) {
 /******************************** Pause / Play ********************************/
 
 // Helper function to determine if the game is paused
-func (gs *gameState) isPaused() bool {
+fn (gs *gameState) isPaused() bool {
 	return gs.getMode() == paused
 }
 
 // Helper function to pause the game
-func (gs *gameState) pause() {
+fn (gs *gameState) pause() {
 
 	// If the game engine is already paused, there's no more to do
 	if gs.isPaused() {
@@ -112,7 +112,7 @@ func (gs *gameState) pause() {
 }
 
 // Helper function to play the game
-func (gs *gameState) play() {
+fn (gs *gameState) play() {
 
 	// If the game engine is already playing or can't play, return
 	if !gs.isPaused() || gs.getLives() == 0 || gs.getCurrTicks() == 0xffff {
@@ -130,7 +130,7 @@ func (gs *gameState) play() {
 /*************************** Pausing on Next Update ***************************/
 
 // Helper function to return whether the game should pause after next update
-func (gs *gameState) getPauseOnUpdate() bool {
+fn (gs *gameState) getPauseOnUpdate() bool {
 
 	// (Read) lock the game mode
 	gs.muMode.RLock()
@@ -141,7 +141,7 @@ func (gs *gameState) getPauseOnUpdate() bool {
 }
 
 // Helper function to pause the game after the next update
-func (gs *gameState) setPauseOnUpdate(flag bool) {
+fn (gs *gameState) setPauseOnUpdate(flag bool) {
 
 	// (Write) lock the game mode
 	gs.muMode.Lock()
@@ -154,7 +154,7 @@ func (gs *gameState) setPauseOnUpdate(flag bool) {
 /********************************* Mode Steps *********************************/
 
 // Helper function to get the number of steps until the mode changes
-func (gs *gameState) getModeSteps() uint8 {
+fn (gs *gameState) getModeSteps() uint8 {
 
 	// (Read) lock the mode steps
 	gs.muModeSteps.RLock()
@@ -165,7 +165,7 @@ func (gs *gameState) getModeSteps() uint8 {
 }
 
 // Helper function to set the number of steps until the mode changes
-func (gs *gameState) setModeSteps(steps uint8) {
+fn (gs *gameState) setModeSteps(steps uint8) {
 
 	// (Write) lock the mode steps
 	gs.muModeSteps.Lock()
@@ -176,7 +176,7 @@ func (gs *gameState) setModeSteps(steps uint8) {
 }
 
 // Helper function to decrement the number of steps until the mode changes
-func (gs *gameState) decrementModeSteps() {
+fn (gs *gameState) decrementModeSteps() {
 
 	// (Write) lock the mode steps
 	gs.muModeSteps.Lock()

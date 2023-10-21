@@ -1,7 +1,7 @@
 /******************************** Ghost Resets ********************************/
 
 // Respawn the ghost
-func (g *ghostState) reset() {
+fn (g *ghostState) reset() {
 
 	// Mark this operation as done once we return
 	defer g.game.wgGhosts.Done()
@@ -29,7 +29,7 @@ func (g *ghostState) reset() {
 /****************************** Ghost Respawning ******************************/
 
 // Respawn the ghost
-func (g *ghostState) respawn() {
+fn (g *ghostState) respawn() {
 
 	// Mark this operation as done once we return
 	defer g.game.wgGhosts.Done()
@@ -61,7 +61,7 @@ func (g *ghostState) respawn() {
 /******************** Ghost Updates (before serialization) ********************/
 
 // Update the ghost's position
-func (g *ghostState) update() {
+fn (g *ghostState) update() {
 
 	// Mark the plan as done once we return
 	defer g.game.wgGhosts.Done()
@@ -92,7 +92,7 @@ func (g *ghostState) update() {
 /******************** Ghost Planning (after serialization) ********************/
 
 // Plan the ghost's next move
-func (g *ghostState) plan() {
+fn (g *ghostState) plan() {
 
 	// Mark the plan as done once we return
 	defer g.game.wgGhosts.Done()

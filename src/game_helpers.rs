@@ -4,7 +4,7 @@
 Get a bit within an unsigned integer (treating the integers
 in pellets and walls as bit arrays)
 */
-func getBit[N uint8 | uint16 | uint32, I int8 | uint8](
+fn getBit[N uint8 | uint16 | uint32, I int8 | uint8](
 	num N, bitIdx I) bool {
 
 	/*
@@ -18,7 +18,7 @@ func getBit[N uint8 | uint16 | uint32, I int8 | uint8](
 Get a bit within an unsigned integer (treating the integers in pellets
 and walls as bit arrays)
 */
-func modifyBit[N uint8 | uint16 | uint32, I int8 | uint8](
+fn modifyBit[N uint8 | uint16 | uint32, I int8 | uint8](
 	num *N, bitIdx I, bitVal bool) {
 
 	// If the bit is true, we should set the bit, otherwise we clear it
@@ -32,7 +32,7 @@ func modifyBit[N uint8 | uint16 | uint32, I int8 | uint8](
 /****************************** Timing Functions ******************************/
 
 // Determines if the game state is ready to update
-func (gs *gameState) updateReady() bool {
+fn (gs *gameState) updateReady() bool {
 
 	// Get the current ticks value
 	currTicks := gs.getCurrTicks()
@@ -47,12 +47,12 @@ func (gs *gameState) updateReady() bool {
 /**************************** Positional Functions ****************************/
 
 // Determines if a position is within the bounds of the maze
-func (gs *gameState) inBounds(row int8, col int8) bool {
+fn (gs *gameState) inBounds(row int8, col int8) bool {
 	return ((row >= 0 && row < mazeRows) && (col >= 0 && col < mazeCols))
 }
 
 // Determines if a pellet is at a given location
-func (gs *gameState) pelletAt(row int8, col int8) bool {
+fn (gs *gameState) pelletAt(row int8, col int8) bool {
 	if !gs.inBounds(row, col) {
 		return false
 	}
@@ -69,7 +69,7 @@ func (gs *gameState) pelletAt(row int8, col int8) bool {
 Collects a pellet if it is at a given location
 Returns the number of pellets that are left
 */
-func (gs *gameState) collectPellet(row int8, col int8) {
+fn (gs *gameState) collectPellet(row int8, col int8) {
 
 	// Collect fruit, if applicable
 	if gs.fruitExists() && gs.pacmanLoc.collidesWith(gs.fruitLoc) {
@@ -127,7 +127,7 @@ func (gs *gameState) collectPellet(row int8, col int8) {
 }
 
 // Determines if a wall is at a given location
-func (gs *gameState) wallAt(row int8, col int8) bool {
+fn (gs *gameState) wallAt(row int8, col int8) bool {
 	if !gs.inBounds(row, col) {
 		return true
 	}
@@ -137,7 +137,7 @@ func (gs *gameState) wallAt(row int8, col int8) bool {
 }
 
 // Determines if the ghost house is at a given location
-func (gs *gameState) ghostSpawnAt(row int8, col int8) bool {
+fn (gs *gameState) ghostSpawnAt(row int8, col int8) bool {
 	if !gs.inBounds(row, col) {
 		return false
 	}
@@ -147,7 +147,7 @@ func (gs *gameState) ghostSpawnAt(row int8, col int8) bool {
 }
 
 // Calculates the squared Euclidean distance between two points
-func (gs *gameState) distSq(row1, col1, row2, col2 int8) int {
+fn (gs *gameState) distSq(row1, col1, row2, col2 int8) int {
 	dx := int(row2 - row1)
 	dy := int(col2 - col1)
 	return dx*dx + dy*dy
@@ -156,7 +156,7 @@ func (gs *gameState) distSq(row1, col1, row2, col2 int8) int {
 /***************************** Collision Handling *****************************/
 
 // Check collisions between Pacman and all the ghosts
-func (gs *gameState) checkCollisions() {
+fn (gs *gameState) checkCollisions() {
 
 	// Flag to decide which ghosts should respawn
 	var ghostRespawnFlag uint8 = 0
@@ -198,7 +198,7 @@ func (gs *gameState) checkCollisions() {
 /***************************** Event-Based Resets *****************************/
 
 // Reset the board (while leaving pellets alone) after Pacman dies
-func (gs *gameState) deathReset() {
+fn (gs *gameState) deathReset() {
 
 	// Acquire the Pacman control lock, to prevent other Pacman movement
 	gs.muPacman.Lock()
@@ -230,7 +230,7 @@ func (gs *gameState) deathReset() {
 }
 
 // Reset the board (including pellets) after Pacman clears a level
-func (gs *gameState) levelReset() {
+fn (gs *gameState) levelReset() {
 
 	// Set the game to be paused at the next update
 	gs.setPauseOnUpdate(true)
@@ -258,7 +258,7 @@ func (gs *gameState) levelReset() {
 /************************** Motion (Pacman Location) **************************/
 
 // Move Pacman one space in a given direction
-func (gs *gameState) movePacmanDir(dir uint8) {
+fn (gs *gameState) movePacmanDir(dir uint8) {
 
 	// Acquire the Pacman control lock, to prevent other Pacman movement
 	gs.muPacman.Lock()
@@ -296,7 +296,7 @@ func (gs *gameState) movePacmanDir(dir uint8) {
 }
 
 // Move Pacman back to its spawn point, if necessary
-func (gs *gameState) tryRespawnPacman() {
+fn (gs *gameState) tryRespawnPacman() {
 
 	// Acquire the Pacman control lock, to prevent other Pacman movement
 	gs.muPacman.Lock()
@@ -311,7 +311,7 @@ func (gs *gameState) tryRespawnPacman() {
 /******************************* Ghost Movement *******************************/
 
 // Frighten all ghosts at once
-func (gs *gameState) frightenAllGhosts() {
+fn (gs *gameState) frightenAllGhosts() {
 
 	// Acquire the ghost control lock, to prevent other ghost movement decisions
 	gs.muGhosts.Lock()
@@ -335,7 +335,7 @@ func (gs *gameState) frightenAllGhosts() {
 }
 
 // Reverse all ghosts at once (similar to frightenAllGhosts)
-func (gs *gameState) reverseAllGhosts() {
+fn (gs *gameState) reverseAllGhosts() {
 
 	// Loop over all the ghosts
 	for _, ghost := range gs.ghosts {
@@ -351,7 +351,7 @@ func (gs *gameState) reverseAllGhosts() {
 }
 
 // Reset all ghosts at once
-func (gs *gameState) resetAllGhosts() {
+fn (gs *gameState) resetAllGhosts() {
 
 	// Acquire the ghost control lock, to prevent other ghost movement
 	gs.muGhosts.Lock()
@@ -384,7 +384,7 @@ func (gs *gameState) resetAllGhosts() {
 }
 
 // Respawn some ghosts, according to a flag
-func (gs *gameState) respawnGhosts(
+fn (gs *gameState) respawnGhosts(
 	numGhostRespawns int, ghostRespawnFlag uint8) {
 
 	// Acquire the ghost control lock, to prevent other ghost movement
@@ -416,7 +416,7 @@ func (gs *gameState) respawnGhosts(
 }
 
 // Update all ghosts at once
-func (gs *gameState) updateAllGhosts() {
+fn (gs *gameState) updateAllGhosts() {
 
 	// Acquire the ghost control lock, to prevent other ghost movement
 	gs.muGhosts.Lock()
@@ -435,7 +435,7 @@ func (gs *gameState) updateAllGhosts() {
 }
 
 // A game state function to plan all ghosts at once
-func (gs *gameState) planAllGhosts() {
+fn (gs *gameState) planAllGhosts() {
 
 	// Acquire the ghost control lock, to prevent other ghost movement
 	gs.muGhosts.Lock()
@@ -459,7 +459,7 @@ func (gs *gameState) planAllGhosts() {
 Returns the chase location of the red ghost
 (i.e. Pacman's exact location)
 */
-func (gs *gameState) getChaseTargetRed() (int8, int8) {
+fn (gs *gameState) getChaseTargetRed() (int8, int8) {
 
 	// Return Pacman's current location
 	return gs.pacmanLoc.getCoords()
@@ -469,7 +469,7 @@ func (gs *gameState) getChaseTargetRed() (int8, int8) {
 Returns the chase location of the pink ghost
 (i.e. 4 spaces ahead of Pacman's location)
 */
-func (gs *gameState) getChaseTargetPink() (int8, int8) {
+fn (gs *gameState) getChaseTargetPink() (int8, int8) {
 
 	// Return the red pink's target (4 spaces ahead of Pacman)
 	return gs.pacmanLoc.getAheadCoords(4)
@@ -479,7 +479,7 @@ func (gs *gameState) getChaseTargetPink() (int8, int8) {
 Returns the chase location of the cyan ghost
 (i.e. The red ghost's location, reflected about 2 spaces ahead of Pacman)
 */
-func (gs *gameState) getChaseTargetCyan() (int8, int8) {
+fn (gs *gameState) getChaseTargetCyan() (int8, int8) {
 
 	// Get the 'pivot' square, 2 steps ahead of Pacman
 	pivotRow, pivotCol := gs.pacmanLoc.getAheadCoords(2)
@@ -497,7 +497,7 @@ Returns the chase location of the orange ghost
 (i.e. Pacman's exact location, the same as red's target most of the time)
 Though, if close enough to Pacman, it should choose its scatter target
 */
-func (gs *gameState) getChaseTargetOrange() (int8, int8) {
+fn (gs *gameState) getChaseTargetOrange() (int8, int8) {
 
 	// Get Pacman's current location
 	pacmanRow, pacmanCol := gs.pacmanLoc.getCoords()
@@ -516,7 +516,7 @@ func (gs *gameState) getChaseTargetOrange() (int8, int8) {
 }
 
 // Returns the chase location of an arbitrary ghost color
-func (gs *gameState) getChaseTarget(color uint8) (int8, int8) {
+fn (gs *gameState) getChaseTarget(color uint8) (int8, int8) {
 	switch color {
 	case red:
 		return gs.getChaseTargetRed()

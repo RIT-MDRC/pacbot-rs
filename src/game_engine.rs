@@ -19,7 +19,7 @@ type GameEngine struct {
 }
 
 // Create a new game engine, casting channels to be uni-directional
-func NewGameEngine(_webOutputCh chan<- []byte, _webInputCh <-chan []byte,
+fn NewGameEngine(_webOutputCh chan<- []byte, _webInputCh <-chan []byte,
 	_wgQuit *sync.WaitGroup, clockRate int32) *GameEngine {
 
 	// Time between ticks
@@ -38,7 +38,7 @@ func NewGameEngine(_webOutputCh chan<- []byte, _webInputCh <-chan []byte,
 }
 
 // Quit by closing the game engine, in case the loop ends
-func (ge *GameEngine) quit() {
+fn (ge *GameEngine) quit() {
 
 	// Log that the game engine successfully quit
 	log.Println("\033[35mLOG:  Game engine successfully quit\033[0m")
@@ -48,12 +48,12 @@ func (ge *GameEngine) quit() {
 }
 
 // Quit function exported to other packages
-func (ge *GameEngine) Quit() {
+fn (ge *GameEngine) Quit() {
 	ge.quitCh <- struct{}{}
 }
 
 // Start the game engine - should be launched as a go-routine
-func (ge *GameEngine) RunLoop() {
+fn (ge *GameEngine) RunLoop() {
 
 	// Quit if we ever run into an error or the program ends
 	defer func() {
