@@ -18,7 +18,7 @@ const DIR_NAMES: [&str; NUM_DIRS + 1] = ["up", "left", "down", "right", "none"];
 An object to keep track of the position and direction of an agent
 */
 #[derive(Copy, Clone)]
-struct LocationState {
+pub struct LocationState {
     row: i8, // Row
     col: i8, // Col
     dir: u8, // Index of the direction, within the direction arrays
@@ -29,94 +29,87 @@ impl LocationState {
         Self { row, col, dir }
     }
 
-	/******************************** Read Location *******************************/
+    /******************************** Read Location *******************************/
 
-// Determine if another location state matches with the given location
-fn collides_with(&self, loc2: LocationState) -> bool {
-	// If any of the rows or columns is at least 32, they don't collide
-	if loc.row >= 32 || loc.col >= 32 || loc2.row >= 32 || loc2.col >= 32 {
-		return false
-	}
+    // Determine if another location state matches with the given location
+    fn collides_with(&self, loc2: LocationState) -> bool {
+        // If any of the rows or columns is at least 32, they don't collide
+        if self.row >= 32 || self.col >= 32 || loc2.row >= 32 || loc2.col >= 32 {
+            return false;
+        }
 
-	// Return if both coordinates match
-	return ((loc.row == loc2.row) && (loc.col == loc2.col))
-}
+        // Return if both coordinates match
+        return ((self.row == loc2.row) && (self.col == loc2.col));
+    }
 
-// Determine if a given location state matches with the empty location
-fn is_empty() -> bool {
-	// Return if both coordinates match
-	return ((loc.row == emptyLoc.row) && (loc.col == emptyLoc.col))
-}
+    // Determine if a given location state matches with the empty location
+    fn is_empty(&self) -> bool {
+        // Return if both coordinates match
+        return ((self.row == EMPTY_LOC.row) && (self.col == EMPTY_LOC.col));
+    }
 
-// Return a direction corresponding to an existing location
-fn get_dir() -> u8 {
-	return loc.dir
-}
+    // Return a direction corresponding to an existing location
+    fn get_dir(&self) -> u8 {
+        self.dir
+    }
 
-fn get_reversed_dir() -> u8 {
+    fn get_reversed_dir(&self) -> u8 {
+        // Copy the current direction
+        let dir = self.get_dir();
 
-	// Copy the current direction
-	dir := loc.getDir()
+        // Switch between up and down, or left and right
+        match dir {
+            UP => DOWN,
+            LEFT => RIGHT,
+            DOWN => UP,
+            RIGHT => LEFT,
+            _ => dir,
+        }
+    }
 
-	// Switch between up and down, or left and right
-	switch dir {
-	case up:
-		return down
-	case left:
-		return right
-	case down:
-		return up
-	case right:
-		return left
-	default:
-		return dir
-	}
-}
+    // Return a set of coordinates corresponding to an existing location
+    fn get_coords(&self) -> (i8, i8) {
+        // Return the pair of coordinates
+        return ((self.row), (self.col));
+    }
 
-// Return a set of coordinates corresponding to an existing location
-fn get_coords(&self) -> (i8, i8) {
+    // Create a new set of coordinates as the neighbor of an existing location
+    fn get_neighbor_coords(&self, dir: u8) -> (i8, i8) {
+        // Add the deltas to the coordinates and return the pair
+        return (
+            (self.row + D_ROW[dir as usize]),
+            (self.col + D_COL[dir as usize]),
+        );
+    }
 
-	// Return the pair of coordinates
-	return (loc.row),
-		(loc.col)
-}
+    /*
+    Return a set of coordinates a few steps ahead (in the direction it is facing)
+    of a given location state
+    */
+    fn get_ahead_coords(&self, spaces: i8) -> (i8, i8) {
+        // Add the deltas to the coordinates and return the pair
+        return (
+            (self.row + D_ROW[self.dir as usize] * spaces),
+            (self.col + D_COL[self.dir as usize] * spaces),
+        );
+    }
 
-// Create a new set of coordinates as the neighbor of an existing location
-fn get_neighbor_coords(&self, dir u8) (i8, i8) {
+    /*
+    Set the given location to be one time step after another location,
+    and copy the current direction
+    */
+    fn advance_from(&mut self, loc2: &LocationState) {
+        // Set the next location to be one ahead of the current one
+        self.update_coords(loc2.get_ahead_coords(1));
 
-	// Add the deltas to the coordinates and return the pair
-	return (loc.row + D_ROW[dir]),
-		(loc.col + D_COL[dir])
-}
+        // Keep the same direction by default
+        self.update_dir(loc2.get_dir());
+    }
 
-/*
-Return a set of coordinates a few steps ahead (in the direction it is facing)
-of a given location state
-*/
-fn get_ahead_coords(&self, spaces: i8)  -> (i8, i8) {
-
-	// Add the deltas to the coordinates and return the pair
-	return (self.row + D_ROW[self.dir]*spaces),
-		(self.col + D_COL[self.dir]*spaces)
-}
-
-/*
-Set the given location to be one time step after another location,
-and copy the current direction
-*/
-fn advance_from(&self, loc2 *locationState) {
-
-	// Set the next location to be one ahead of the current one
-	loc.updateCoords(loc2.getAheadCoords(1))
-
-	// Keep the same direction by default
-	loc.updateDir(loc2.getDir())
-}
-
-// Move a given location state to specified coordinates
-fn update_coords(&self, row i8, col i8) {
-	// Update the values
-	loc.row = row
-	loc.col = col
-}
+    // Move a given location state to specified coordinates
+    fn update_coords(&mut self, row: i8, col: i8) {
+        // Update the values
+        self.row = row;
+        self.col = col;
+    }
 }

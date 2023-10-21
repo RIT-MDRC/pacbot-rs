@@ -1,197 +1,133 @@
+use crate::location::LocationState;
+
 // Enum-like declaration to hold the ghost colors
-const (
-	red       uint8 = 0
-	pink      uint8 = 1
-	cyan      uint8 = 2
-	orange    uint8 = 3
-	numColors uint8 = 4
-)
+const RED: u8 = 0;
+const PINK: u8 = 1;
+const CYAN: u8 = 2;
+const ORANGE: u8 = 3;
+const NUM_COLORS: u8 = 4;
 
 /*
 The number of "active" ghosts (the others are invisible and don't affect
 the progression of the game)
 */
-var numActiveGhosts uint8 = 4
+const NUM_ACTIVE_GHOSTS: u8 = 4;
 
 // Configure the number of active ghosts
-func ConfigNumActiveGhosts(_numActiveGhosts uint8) {
-	numActiveGhosts = _numActiveGhosts
+fn config_num_active_ghosts(num_active_ghosts: u8) {
+    NUM_ACTIVE_GHOSTS = num_active_ghosts;
 }
 
 // Names of the ghosts (not the nicknames, just the colors, for debugging)
-var ghostNames [numColors]string = [...]string{
-	"red",
-	"pink",
-	"cyan",
-	"orange",
-}
+// var ghostNames [numColors]string = [...]string{
+// 	"red",
+// 	"pink",
+// 	"cyan",
+// 	"orange",
+// }
 
 /*
 An object to keep track of the location and attributes of a ghost
 */
-type ghostState struct {
-	loc           *locationState // Current location
-	nextLoc       *locationState // Planned location (for next update)
-	scatterTarget *locationState // Position of (fixed) scatter target
-	game          *gameState     // The game state tied to the ghost
-	color         uint8
-	trappedSteps  uint8
-	frightSteps   uint8
-	spawning      bool         // Flag set when spawning
-	eaten         bool         // Flag set when eaten and returning to ghost house
-	muState       sync.RWMutex // Mutex to lock general state parameters
+struct GhostState {
+    pub loc: LocationState,            // Current location
+    pub next_loc: LocationState,       // Planned location (for next update)
+    pub scatter_target: LocationState, // Position of (fixed) scatter target
+    pub game: GameState,               // The game state tied to the ghost
+    pub color: u8,
+    pub trapped_steps: u8,
+    pub fright_steps: u8,
+    pub spawning: bool, // Flag set when spawning
+    pub eaten: bool,    // Flag set when eaten and returning to ghost house
 }
 
-// Create a new ghost state with given location and color values
-func newGhostState(_gameState *gameState, _color uint8) *ghostState {
+impl GhostState {
+    // Create a new ghost state with given location and color values
+    pub fn new(game_state: &GameState, color: u8) -> Self {
+        // Ghost state object
+        let mut g = Self {
+            loc: new_location_state_copy(empty_loc),
+            next_loc: new_location_state_copy(ghost_spawn_locs[color]),
+            scatter_target: new_location_state_copy(ghost_scatter_targets[color]),
+            game: game_state,
+            color,
+            trapped_steps: ghost_trapped_steps[color],
+            fright_steps: 0,
+            spawning: true,
+            eaten: false,
+        };
 
-	// Ghost state object
-	g := ghostState{
-		loc:           newLocationStateCopy(emptyLoc),
-		nextLoc:       newLocationStateCopy(ghostSpawnLocs[_color]),
-		scatterTarget: newLocationStateCopy(ghostScatterTargets[_color]),
-		game:          _gameState,
-		color:         _color,
-		trappedSteps:  ghostTrappedSteps[_color],
-		frightSteps:   0,
-		spawning:      true,
-		eaten:         false,
-	}
+        // If the color is greater than the number of active ghosts, hide this ghost
+        if color >= NUM_ACTIVE_GHOSTS {
+            g.next_loc = new_location_state_copy(empty_loc);
+        }
 
-	// If the color is greater than the number of active ghosts, hide this ghost
-	if _color >= numActiveGhosts {
-		g.nextLoc = newLocationStateCopy(emptyLoc)
-	}
+        // Return the ghost state
+        new
+    }
 
-	// Return the ghost state
-	return &g
-}
+    /*************************** Ghost Frightened State ***************************/
 
-/*************************** Ghost Frightened State ***************************/
+    // Set the fright steps of a ghost
+    pub fn set_fright_steps(steps: u8) {
+        g.frightSteps = steps;
+    }
 
-// Set the fright steps of a ghost
-func (g *ghostState) setFrightSteps(steps uint8) {
+    // Decrement the fright steps of a ghost
+    pub fn dec_fright_steps() {
+        g.frightSteps -= 1;
+    }
 
-	// (Write) lock the ghost state
-	g.muState.Lock()
-	{
-		g.frightSteps = steps
-	}
-	g.muState.Unlock()
-}
+    // Get the fright steps of a ghost
+    pub fn get_fright_steps() -> u8 {
+        g.frightSteps
+    }
 
-// Decrement the fright steps of a ghost
-func (g *ghostState) decFrightSteps() {
+    // Check if a ghost is frightened
+    pub fn is_frightened() -> bool {
+        // Return whether there is at least one fright step left
+        g.frightSteps > 0
+    }
 
-	// (Write) lock the ghost state
-	g.muState.Lock()
-	{
-		g.frightSteps--
-	}
-	g.muState.Unlock()
-}
+    /****************************** Ghost Trap State ******************************/
 
-// Get the fright steps of a ghost
-func (g *ghostState) getFrightSteps() uint8 {
+    // Set the trapped steps of a ghost
+    pub fn set_trapped_steps(steps: u8) {
+        g.trapped_steps = steps;
+    }
 
-	// (Read) lock the ghost state
-	g.muState.RLock()
-	defer g.muState.RUnlock()
+    // Decrement the trapped steps of a ghost
+    pub fn dec_trapped_steps() {
+        g.trapped_steps -= 1;
+    }
 
-	// Return the current fright steps
-	return g.frightSteps
-}
+    // Check if a ghost is trapped
+    pub fn is_trapped() -> bool {
+        // Return whether there is at least one fright step left
+        g.trapped_steps > 0
+    }
 
-// Check if a ghost is frightened
-func (g *ghostState) isFrightened() bool {
+    /**************************** Ghost Spawning State ****************************/
 
-	// (Read) lock the ghost state
-	g.muState.RLock()
-	defer g.muState.RUnlock()
+    // Set the ghost spawning flag
+    pub fn set_spawning(spawning: bool) {
+        g.spawning = spawning;
+    }
 
-	// Return whether there is at least one fright step left
-	return g.frightSteps > 0
-}
+    /// Check if a ghost is spawning.
+    pub fn is_spawning() -> bool {
+        g.spawning
+    }
 
-/****************************** Ghost Trap State ******************************/
+    /****************************** Ghost Eaten Flag ******************************/
 
-// Set the trapped steps of a ghost
-func (g *ghostState) setTrappedSteps(steps uint8) {
+    /// Set the ghost eaten flag.
+    pub fn set_eaten(eaten: bool) {
+        g.eaten = eaten;
+    }
 
-	// (Write) lock the ghost state
-	g.muState.Lock()
-	{
-		g.trappedSteps = steps
-	}
-	g.muState.Unlock()
-}
-
-// Decrement the trapped steps of a ghost
-func (g *ghostState) decTrappedSteps() {
-
-	// (Write) lock the ghost state
-	g.muState.Lock()
-	{
-		g.trappedSteps--
-	}
-	g.muState.Unlock()
-}
-
-// Check if a ghost is trapped
-func (g *ghostState) isTrapped() bool {
-
-	// (Read) lock the ghost state
-	g.muState.RLock()
-	defer g.muState.RUnlock()
-
-	// Return whether there is at least one fright step left
-	return g.trappedSteps > 0
-}
-
-/**************************** Ghost Spawning State ****************************/
-
-// Set the ghost spawning flag
-func (g *ghostState) setSpawning(spawning bool) {
-
-	// (Write) lock the ghost state
-	g.muState.Lock()
-	{
-		g.spawning = spawning
-	}
-	g.muState.Unlock()
-}
-
-// Check if a ghost is spawning
-func (g *ghostState) isSpawning() bool {
-
-	// (Read) lock the ghost state
-	g.muState.RLock()
-	defer g.muState.RUnlock()
-
-	// Return the current ghost spawning flag
-	return g.spawning
-}
-
-/****************************** Ghost Eaten Flag ******************************/
-
-// Set the ghost eaten flag
-func (g *ghostState) setEaten(eaten bool) {
-
-	// (Write) lock the ghost state
-	g.muState.Lock()
-	{
-		g.eaten = eaten
-	}
-	g.muState.Unlock()
-}
-
-// Check if a ghost is eaten
-func (g *ghostState) isEaten() bool {
-
-	// (Read) lock the ghost state
-	g.muState.RLock()
-	defer g.muState.RUnlock()
-
-	// Return the current ghost eaten flag
-	return g.eaten
+    /// Check if a ghost is eaten.
+    pub fn is_eaten() -> bool {
+        g.eaten
+    }
 }
