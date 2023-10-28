@@ -1,527 +1,359 @@
+use array_init::array_init;
 
-/*
-	NOTE: at 24 ticks/sec, currTicks will experience an integer overflow after
-	about 45 minutes, so don't run it continuously for too long (indefinite
-	pausing is fine though, as it doesn't increment the current tick amount)
-*/
+use crate::{
+    game_modes::{CHASE, PAUSED, SCATTER},
+    ghost_state::GhostState,
+    location::LocationState,
+    variables::*,
+};
 
-/*
-A game state object, to hold the internal game state and provide
-helper methods that can be accessed by the game engine
-*/
-type gameState struct {
+/// A game state object, to hold the internal game state and provide
+/// helper methods that can be accessed by the game engine.
+pub struct GameState {
+    /* Message header - 4 bytes */
+    /// Current ticks.
+    currTicks: u32,
 
-	/* Message header - 4 bytes */
+    /// Ticks / update.
+    updatePeriod: u8,
 
-	currTicks uint16       // Current ticks (see note above)
-	muTicks   sync.RWMutex // Associated mutex
+    /// Last unpaused mode (for pausing purposes).
+    lastUnpausedMode: u8,
+    /// Game mode.
+    pub mode: u8,
+    /// Should pause when an update is ready.
+    pauseOnUpdate: bool,
 
-	updatePeriod uint8        // Ticks / update
-	muPeriod     sync.RWMutex // Associated mutex
+    /// The number of steps (update periods) before the mode changes.
+    modeSteps: u8,
 
-	lastUnpausedMode uint8        // Last unpaused mode (for pausing purposes)
-	mode             uint8        // Game mode
-	muMode           sync.RWMutex // Associated mutex
-	pauseOnUpdate    bool         // Should pause when an update is ready
+    /// The number of steps (update periods) before a speedup penalty starts.
+    levelSteps: u16,
 
-	// The number of steps (update periods) before the mode changes
-	modeSteps   uint8
-	muModeSteps sync.RWMutex // Associated mutex
+    /* Game information - 4 bytes */
+    /// Current score
+    currScore: u16,
 
-	// The number of steps (update periods) before a speedup penalty starts
-	levelSteps   uint16
-	muLevelSteps sync.RWMutex // Associated mutex
+    /// Current level (by default, starts at 1)
+    currLevel: u8,
 
-	/* Game information - 4 bytes */
+    /// Current lives (by default, starts at 3)
+    currLives: u8,
 
-	currScore uint16       // Current score
-	muScore   sync.RWMutex // Associated mutex
+    /* Pacman location - 2 bytes */
+    pacmanLoc: LocationState,
 
-	currLevel uint8        // Current level (by default, starts at 1)
-	muLevel   sync.RWMutex // Associated mutex
+    /* Fruit location - 2 bytes */
+    fruitLoc: LocationState,
 
-	currLives uint8        // Current lives (by default, starts at 3)
-	muLives   sync.RWMutex // Associated mutex
+    /// The number of steps (update periods) before fruit disappears
+    fruitSteps: u8,
 
-	/* Pacman location - 2 bytes */
+    /* Ghosts - 4 * 3 = 12 bytes */
+    ghosts: [GhostState; 4],
 
-	pacmanLoc *locationState
+    /// A variable to keep track of the current ghost combo
+    ghostCombo: u8,
 
-	// A mutex for synchronizing updates to Pacman
-	muPacman sync.Mutex
+    /* Pellet State - 31 * 4 = 124 bytes */
+    /// Pellets encoded within an array, with each uint32 acting as a bit array
+    pellets: [u32; MAZE_ROWS],
 
-	/* Fruit location - 2 bytes */
+    /// Number of pellets
+    numPellets: u16,
 
-	fruitLoc *locationState
-
-	// The number of steps (update periods) before fruit disappears
-	fruitSteps uint8
-	muFruit    sync.RWMutex // Associated mutex
-
-	/* Ghosts - 4 * 3 = 12 bytes */
-
-	ghosts []*ghostState
-
-	// A mutex for synchronizing simultaneous updates of all ghosts
-	muGhosts sync.Mutex
-
-	// A wait group for synchronizing updates of multiple ghosts
-	wgGhosts *sync.WaitGroup
-
-	// A variable to keep track of the current ghost combo
-	ghostCombo uint8
-
-	/* Pellet State - 31 * 4 = 124 bytes */
-
-	// Pellets encoded within an array, with each uint32 acting as a bit array
-	pellets    [mazeRows]uint32
-	numPellets uint16       // Number of pellets
-	muPellets  sync.RWMutex // Associated mutex
-
-	/* Auxiliary (non-serialized) state information */
-
-	// Wall state
-	walls [mazeRows]uint32
-
-	// A random number generator for making frightened ghost decisions
-	rng *rand.Rand
+    /* Auxiliary (non-serialized) state information */
+    /// Wall state
+    walls: [u32; MAZE_ROWS],
 }
 
-// Create a new game state with default values
-fn newGameState() *gameState {
-
-	// New game state object
-	gs := gameState{
-
-		// Message header
-		currTicks:    0,
-		updatePeriod: initUpdatePeriod,
-		mode:         paused,
-
-		// Additional header-related info
-		lastUnpausedMode: initMode,
-		pauseOnUpdate:    false,
-		modeSteps:        modeDurations[initMode],
-		levelSteps:       levelDuration,
-
-		// Game info
-		currScore: 0,
-		currLevel: initLevel,
-		currLives: initLives,
-
-		// Fruit
-		fruitSteps: 0,
-
-		// Ghosts
-		ghosts:     make([]*ghostState, numColors),
-		wgGhosts:   &sync.WaitGroup{},
-		ghostCombo: 0,
-
-		// RNG (random number generation) source
-		rng: rand.New(rand.NewSource(time.Now().UnixNano())),
-
-		// Pellet count at the start
-		numPellets: initPelletCount,
-	}
-
-	// Declare the initial locations of Pacman and the fruit
-	gs.pacmanLoc = newLocationStateCopy(pacmanSpawnLoc)
-	gs.fruitLoc = newLocationStateCopy(fruitSpawnLoc)
-
-	// Initialize the ghosts
-	for color := uint8(0); color < numColors; color++ {
-		gs.ghosts[color] = newGhostState(&gs, color)
-	}
-
-	// Copy over maze bit arrays
-	copy(gs.pellets[:], initPellets[:])
-	copy(gs.walls[:], initWalls[:])
-
-	// Return the new game state
-	return &gs
-}
-
-/**************************** Curr Ticks Functions ****************************/
-
-// Helper function to get the current ticks
-fn (gs *gameState) getCurrTicks() uint16 {
-
-	// (Read) lock the current ticks
-	gs.muTicks.RLock()
-	defer gs.muTicks.RUnlock()
-
-	// Return the current ticks
-	return gs.currTicks
-}
-
-// Helper function to increment the current ticks
-fn (gs *gameState) nextTick() {
-
-	// Get the current number of ticks
-	currTicks := gs.getCurrTicks()
-
-	// If the current ticks are at the maximum, return
-	if currTicks == 0xffff {
-		return
-	} else if currTicks == 0xfffe {
-		gs.pause()
-		log.Println("\033[31mGAME: Max tick limit reached\033[0m")
-	}
-
-	// (Write) lock the current ticks
-	gs.muTicks.Lock()
-	{
-		gs.currTicks++ // Update the current ticks
-	}
-	gs.muTicks.Unlock()
-}
-
-/**************************** Upd Period Functions ****************************/
-
-// Helper function to get the update period
-fn (gs *gameState) getUpdatePeriod() uint8 {
-
-	// (Read) lock the update period
-	gs.muPeriod.RLock()
-	defer gs.muPeriod.RUnlock()
-
-	// Return the update period
-	return gs.updatePeriod
-}
-
-// Helper function to set the update period
-fn (gs *gameState) setUpdatePeriod(period uint8) {
-
-	// Send a message to the terminal
-	log.Printf("\033[36mGAME: Update period changed (%d -> %d) (t = %d)\033[0m\n",
-		gs.getUpdatePeriod(), period, gs.getCurrTicks())
-
-	// (Write) lock the update period
-	gs.muPeriod.Lock()
-	{
-		gs.updatePeriod = period // Update the update period
-	}
-	gs.muPeriod.Unlock()
-}
-
-/******************************* Mode Functions *******************************/
-
-// See game_modes.go, there were a lot of mode functions so I moved them there
-
-/**************************** Game Score Functions ****************************/
-
-// Helper function to get the current score of the game
-fn (gs *gameState) getScore() uint16 {
-
-	// (Read) lock the current score
-	gs.muScore.RLock()
-	defer gs.muScore.RUnlock()
-
-	// Return the current score
-	return gs.currScore
-}
-
-// (For performance) helper function to increment the current score of the game
-fn (gs *gameState) incrementScore(change uint16) {
-
-	// Calculate the next score, capping at the maximum 16-bit unsigned int
-	score := uint32(gs.currScore)
-	score = min(score+uint32(change), 65535)
-
-	// (Write) lock the current score
-	gs.muScore.Lock()
-	{
-		gs.currScore = uint16(score) // Update the current score
-	}
-	gs.muScore.Unlock()
-}
-
-/**************************** Game Level Functions ****************************/
-
-// Helper function to get the current level of the game
-fn (gs *gameState) getLevel() uint8 {
-
-	// (Read) lock the current level
-	gs.muLevel.RLock()
-	defer gs.muLevel.RUnlock()
-
-	// Return the current level
-	return gs.currLevel
-}
-
-// Helper function to set the current level of the game
-fn (gs *gameState) setLevel(level uint8) {
-
-	// (Write) lock the current level
-	gs.muLevel.Lock()
-	{
-		gs.currLevel = level // Update the level
-
-		// Adjust the initial update period accordingly
-		suggestedPeriod := int(initUpdatePeriod) - 2*(int(level)-1)
-		gs.setUpdatePeriod(uint8(max(1, suggestedPeriod)))
-	}
-	gs.muLevel.Unlock()
-}
-
-// Helper function to increment the game level
-fn (gs *gameState) incrementLevel() {
-
-	// Keep track of the current level
-	level := gs.getLevel()
-
-	// If we are at the last level, don't increment it anymore
-	if level == 255 {
-		return
-	}
-
-	// Send a message to the terminal
-	log.Printf("\033[32mGAME: Next level (%d -> %d) (t = %d)\033[0m\n",
-		level, level+1, gs.getCurrTicks())
-
-	// (Write) lock the current lives
-	gs.muLevel.Lock()
-	{
-		gs.currLevel++ // Update the level
-
-		// Adjust the initial update period accordingly
-		suggestedPeriod := int(initUpdatePeriod) - 2*int(level)
-		gs.setUpdatePeriod(uint8(max(1, suggestedPeriod)))
-	}
-	gs.muLevel.Unlock()
-}
-
-/**************************** Game Level Functions ****************************/
-
-// Helper function to get the lives left
-fn (gs *gameState) getLives() uint8 {
-
-	// (Read) lock the current lives
-	gs.muLives.RLock()
-	defer gs.muLives.RUnlock()
-
-	// Return the current lives
-	return gs.currLives
-}
-
-// Helper function to set the lives left
-fn (gs *gameState) setLives(lives uint8) {
-
-	// Send a message to the terminal
-	log.Printf("\033[36mGAME: Lives changed (%d -> %d)\033[0m\n",
-		gs.getLives(), lives)
-
-	// (Write) lock the current lives
-	gs.muLives.Lock()
-	{
-		gs.currLives = lives // Update the lives
-	}
-	gs.muLives.Unlock()
-}
-
-// Helper function to decrement the lives left
-fn (gs *gameState) decrementLives() {
-
-	// Keep track of how many lives Pacman has left
-	lives := gs.getLives()
-
-	// If there were no lives, no need to decrement any more
-	if lives == 0 {
-		return
-	}
-
-	// Send a message to the terminal
-	log.Printf("\033[31mGAME: Pacman lost a life (%d -> %d) (t = %d)\033[0m\n",
-		lives, lives-1, gs.getCurrTicks())
-
-	// (Write) lock the current lives
-	gs.muLives.Lock()
-	{
-		gs.currLives-- // Update the lives
-	}
-	gs.muLives.Unlock()
-}
-
-/****************************** Pellet Functions ******************************/
-
-// Helper function to get the number of pellets
-fn (gs *gameState) getNumPellets() uint16 {
-
-	// (Read) lock the number of pellets
-	gs.muPellets.RLock()
-	defer gs.muPellets.RUnlock()
-
-	// Return the number of pellets
-	return gs.numPellets
-}
-
-// Helper function to decrement the number of pellets
-fn (gs *gameState) decrementNumPellets() {
-
-	// (Write) lock the number of pellets
-	gs.muPellets.Lock()
-	{
-		if gs.numPellets != 0 {
-			gs.numPellets--
-		}
-	}
-	gs.muPellets.Unlock()
-}
-
-// Reset all the pellets on the board
-fn (gs *gameState) resetPellets() {
-
-	// (Write) lock the pellets array and number of pellets
-	gs.muPellets.Lock()
-	{
-		// Copy over pellet bit array
-		copy(gs.pellets[:], initPellets[:])
-
-		// Set the number of pellets to be the default
-		gs.numPellets = initPelletCount
-	}
-	gs.muPellets.Unlock()
-}
-
-/************************** Fruit Spawning Functions **************************/
-
-// Helper function to get the number of steps until the fruit disappears
-fn (gs *gameState) getFruitSteps() uint8 {
-
-	// (Read) lock the fruit steps
-	gs.muFruit.RLock()
-	defer gs.muFruit.RUnlock()
-
-	// Return the fruit steps
-	return gs.fruitSteps
-}
-
-// Helper function to determine whether fruit exists
-fn (gs *gameState) fruitExists() bool {
-
-	// Return whether fruit exists
-	return gs.getFruitSteps() > 0
-}
-
-// Helper function to set the number of steps until the fruit disappears
-fn (gs *gameState) setFruitSteps(steps uint8) {
-
-	// (Write) lock the fruit steps
-	gs.muFruit.Lock()
-	{
-		gs.fruitSteps = steps // Set the fruit steps
-	}
-	gs.muFruit.Unlock()
-}
-
-// Helper function to decrement the number of fruit steps
-fn (gs *gameState) decrementFruitSteps() {
-
-	// (Write) lock the fruit steps
-	gs.muFruit.Lock()
-	{
-		if gs.fruitSteps != 0 {
-			gs.fruitSteps-- // Decrease the fruit steps
-		}
-	}
-	gs.muFruit.Unlock()
-}
-
-/***************************** Level Steps Passed *****************************/
-
-// Helper function to get the number of steps until the level speeds up
-fn (gs *gameState) getLevelSteps() uint16 {
-
-	// (Read) lock the level steps
-	gs.muLevelSteps.RLock()
-	defer gs.muLevelSteps.RUnlock()
-
-	// Return the level steps
-	return gs.levelSteps
-}
-
-// Helper function to set the number of steps until the level speeds up
-fn (gs *gameState) setLevelSteps(steps uint16) {
-
-	// (Write) lock the level steps
-	gs.muLevelSteps.Lock()
-	{
-		gs.levelSteps = steps // Set the level steps
-	}
-	gs.muLevelSteps.Unlock()
-}
-
-// Helper function to decrement the number of steps until the mode changes
-fn (gs *gameState) decrementLevelSteps() {
-
-	// (Write) lock the level steps
-	gs.muLevelSteps.Lock()
-	{
-		if gs.levelSteps != 0 {
-			gs.levelSteps-- // Decrease the level steps
-		}
-	}
-	gs.muLevelSteps.Unlock()
-}
-
-/***************************** Step-Related Events ****************************/
-
-// Helper function to handle step-related events, if the mode steps hit 0
-fn (gs *gameState) handleStepEvents() {
-
-	// Get the current mode steps
-	modeSteps := gs.getModeSteps()
-
-	// Get the current level steps
-	levelSteps := gs.getLevelSteps()
-
-	// If the mode steps are 0, change the mode
-	if modeSteps == 0 {
-		switch gs.getMode() {
-		// chase -> scatter
-		case chase:
-			gs.setMode(scatter)
-			gs.setModeSteps(modeDurations[scatter])
-		// scatter -> chase
-		case scatter:
-			gs.setMode(chase)
-			gs.setModeSteps(modeDurations[chase])
-		case paused:
-			switch gs.getLastUnpausedMode() {
-			// chase -> scatter
-			case chase:
-				gs.setLastUnpausedMode(scatter)
-				gs.setModeSteps(modeDurations[scatter])
-			// scatter -> chase
-			case scatter:
-				gs.setLastUnpausedMode(chase)
-				gs.setModeSteps(modeDurations[chase])
-			}
-		}
-
-		// Reverse the directions of all ghosts to indicate a mode switch
-		gs.reverseAllGhosts()
-	}
-
-	// If the level steps are 0, add a penalty by speeding up the game
-	if levelSteps == 0 {
-
-		// Log the change to the terminal
-		log.Println("\033[31mGAME: Long-game penalty applied\033[0m")
-
-		// Drop the update period by 2
-		gs.setUpdatePeriod(uint8(max(1, int(gs.getUpdatePeriod())-2)))
-
-		// Reset the level steps to the level penalty duration
-		gs.setLevelSteps(levelPenaltyDuration)
-	}
-
-	// Decrement the mode steps
-	gs.decrementModeSteps()
-
-	// Decrement the level steps
-	gs.decrementLevelSteps()
-
-	// Decrement the fruit steps
-	gs.decrementFruitSteps()
+impl GameState {
+    /// Creates a new game state with default values.
+    pub fn new() -> Self {
+        Self {
+            // Message header
+            currTicks: 0,
+            updatePeriod: INIT_UPDATE_PERIOD,
+            mode: PAUSED,
+
+            // Additional header-related info
+            lastUnpausedMode: INIT_MODE,
+            pauseOnUpdate: false,
+            modeSteps: MODE_DURATIONS[INIT_MODE],
+            levelSteps: LEVEL_DURATION,
+
+            // Game info
+            currScore: 0,
+            currLevel: INIT_LEVEL,
+            currLives: INIT_LIVES,
+
+            pacmanLoc: PACMAN_SPAWN_LOC,
+
+            // Fruit
+            fruitLoc: FRUIT_SPAWN_LOC,
+            fruitSteps: 0,
+
+            // Ghosts
+            ghosts: array_init(|color| GhostState::new(color as u8)),
+            ghostCombo: 0,
+
+            // Pellet count at the start
+            pellets: INIT_PELLETS,
+            numPellets: INIT_PELLET_COUNT,
+
+            // Walls
+            walls: INIT_WALLS,
+        }
+    }
+
+    /**************************** Curr Ticks Functions ****************************/
+
+    /// Helper function to increment the current ticks
+    fn nextTick(&mut self) {
+        self.currTicks += 1;
+    }
+
+    /**************************** Upd Period Functions ****************************/
+
+    /// Helper function to get the update period
+    fn getUpdatePeriod(&self) -> u8 {
+        self.updatePeriod
+    }
+
+    /// Helper function to set the update period
+    fn setUpdatePeriod(&mut self, period: u8) {
+        // Send a message to the terminal
+        println!(
+            "\x1b[36mGAME: Update period changed ({} -> {}) (t = {})\x1b[0m\n",
+            self.getUpdatePeriod(),
+            period,
+            self.currTicks,
+        );
+
+        self.updatePeriod = period // Update the update period
+    }
+
+    /******************************* Mode Functions *******************************/
+
+    // See game_modes.go, there were a lot of mode functions so I moved them there
+
+    /**************************** Game Score Functions ****************************/
+
+    /// Helper function to get the current score of the game
+    fn getScore(&self) -> u16 {
+        self.currScore
+    }
+
+    /// (For performance) helper function to increment the current score of the game
+    fn incrementScore(&mut self, change: u16) {
+        self.currScore = self.currScore.saturating_add(change);
+    }
+
+    /**************************** Game Level Functions ****************************/
+
+    /// Helper function to get the current level of the game
+    fn getLevel(&self) -> u8 {
+        self.currLevel
+    }
+
+    /// Helper function to set the current level of the game
+    fn setLevel(&self, level: u8) {
+        self.currLevel = level; // Update the level
+
+        // Adjust the initial update period accordingly
+        let suggested_period = (INIT_UPDATE_PERIOD as i32) - 2 * ((level as i32) - 1);
+        self.setUpdatePeriod(i32::max(1, suggested_period) as u8);
+    }
+
+    /// Helper function to increment the game level
+    fn incrementLevel(&self) {
+        // Keep track of the current level
+        let level = self.getLevel();
+
+        // If we are at the last level, don't increment it anymore
+        if level == 255 {
+            return;
+        }
+
+        // Send a message to the terminal
+        println!(
+            "\x1b[32mGAME: Next level ({} -> {}) (t = {})\x1b[0m\n",
+            level,
+            level + 1,
+            self.currTicks,
+        );
+
+        self.setLevel(self.currLevel + 1); // Update the level
+    }
+
+    /**************************** Game Level Functions ****************************/
+
+    /// Helper function to get the lives left
+    fn getLives(&self) -> u8 {
+        self.currLives
+    }
+
+    /// Helper function to set the lives left
+    fn setLives(&self, lives: u8) {
+        // Send a message to the terminal
+        println!(
+            "\x1b[36mGAME: Lives changed ({} -> {})\x1b[0m\n",
+            self.getLives(),
+            lives,
+        );
+
+        self.currLives = lives; // Update the lives
+    }
+
+    /// Helper function to decrement the lives left
+    fn decrementLives(&self) {
+        // Keep track of how many lives Pacman has left
+        let lives = self.getLives();
+
+        // If there were no lives, no need to decrement any more
+        if lives == 0 {
+            return;
+        }
+
+        // Send a message to the terminal
+        println!(
+            "\x1b[31mGAME: Pacman lost a life ({} -> {}) (t = {})\x1b[0m\n",
+            lives,
+            lives - 1,
+            self.currTicks,
+        );
+
+        self.currLives -= 1; // Update the lives
+    }
+
+    /****************************** Pellet Functions ******************************/
+
+    /// Helper function to get the number of pellets
+    fn getNumPellets(&self) -> u16 {
+        self.numPellets
+    }
+
+    /// Helper function to decrement the number of pellets
+    fn decrementNumPellets(&self) {
+        if self.numPellets != 0 {
+            self.numPellets -= 1;
+        }
+    }
+
+    /// Reset all the pellets on the board
+    fn resetPellets(&self) {
+        // Copy over pellet bit array
+        self.pellets = INIT_PELLETS;
+
+        // Set the number of pellets to be the default
+        self.numPellets = INIT_PELLET_COUNT;
+    }
+
+    /************************** Fruit Spawning Functions **************************/
+
+    /// Helper function to get the number of steps until the fruit disappears
+    fn getFruitSteps(&self) -> u8 {
+        self.fruitSteps
+    }
+
+    /// Helper function to determine whether fruit exists
+    fn fruitExists(&self) -> bool {
+        self.getFruitSteps() > 0
+    }
+
+    /// Helper function to set the number of steps until the fruit disappears
+    fn setFruitSteps(&self, steps: u8) {
+        self.fruitSteps = steps; // Set the fruit steps
+    }
+
+    /// Helper function to decrement the number of fruit steps
+    fn decrementFruitSteps(&self) {
+        if self.fruitSteps != 0 {
+            self.fruitSteps -= 1; // Decrease the fruit steps
+        }
+    }
+
+    /***************************** Level Steps Passed *****************************/
+
+    /// Helper function to get the number of steps until the level speeds up
+    fn getLevelSteps(&self) -> u16 {
+        self.levelSteps
+    }
+
+    /// Helper function to set the number of steps until the level speeds up
+    fn setLevelSteps(&self, steps: u16) {
+        self.levelSteps = steps; // Set the level steps
+    }
+
+    /// Helper function to decrement the number of steps until the mode changes
+    fn decrementLevelSteps(&self) {
+        if self.levelSteps != 0 {
+            self.levelSteps -= 1; // Decrease the level steps
+        }
+    }
+
+    /***************************** Step-Related Events ****************************/
+
+    /// Helper function to handle step-related events, if the mode steps hit 0
+    fn handleStepEvents(&self) {
+        // Get the current mode steps
+        let modeSteps = self.get_mode_steps();
+
+        // Get the current level steps
+        let levelSteps = self.getLevelSteps();
+
+        // If the mode steps are 0, change the mode
+        if modeSteps == 0 {
+            match self.get_mode() {
+                // CHASE -> SCATTER
+                CHASE => {
+                    self.set_mode(SCATTER);
+                    self.set_mode_steps(MODE_DURATIONS[SCATTER]);
+                }
+                // SCATTER -> CHASE
+                SCATTER => {
+                    self.set_mode(CHASE);
+                    self.set_mode_steps(MODE_DURATIONS[CHASE]);
+                }
+                PAUSED => {
+                    match self.get_last_unpaused_mode() {
+                        // CHASE -> SCATTER
+                        CHASE => {
+                            self.set_last_unpaused_mode(SCATTER);
+                            self.set_mode_steps(MODE_DURATIONS[SCATTER]);
+                        }
+                        // SCATTER -> CHASE
+                        SCATTER => {
+                            self.set_last_unpaused_mode(CHASE);
+                            self.set_mode_steps(MODE_DURATIONS[CHASE]);
+                        }
+                    }
+                }
+            }
+
+            // Reverse the directions of all ghosts to indicate a mode switch
+            self.reverseAllGhosts();
+        }
+
+        // If the level steps are 0, add a penalty by speeding up the game
+        if levelSteps == 0 {
+            // Log the change to the terminal
+            println!("\x1b[31mGAME: Long-game penalty applied\x1b[0m");
+
+            // Drop the update period by 2
+            self.setUpdatePeriod(u8::max(1, self.getUpdatePeriod().saturating_sub(2)));
+
+            // Reset the level steps to the level penalty duration
+            self.setLevelSteps(LEVEL_PENALTY_DURATION);
+        }
+
+        // Decrement the mode steps
+        self.decrementModeSteps();
+
+        // Decrement the level steps
+        self.decrementLevelSteps();
+
+        // Decrement the fruit steps
+        self.decrementFruitSteps();
+    }
 }

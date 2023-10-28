@@ -29,11 +29,10 @@ fn config_num_active_ghosts(num_active_ghosts: u8) {
 /*
 An object to keep track of the location and attributes of a ghost
 */
-struct GhostState {
+pub struct GhostState {
     pub loc: LocationState,            // Current location
     pub next_loc: LocationState,       // Planned location (for next update)
     pub scatter_target: LocationState, // Position of (fixed) scatter target
-    pub game: GameState,               // The game state tied to the ghost
     pub color: u8,
     pub trapped_steps: u8,
     pub fright_steps: u8,
@@ -43,13 +42,12 @@ struct GhostState {
 
 impl GhostState {
     // Create a new ghost state with given location and color values
-    pub fn new(game_state: &GameState, color: u8) -> Self {
+    pub fn new(color: u8) -> Self {
         // Ghost state object
         let mut g = Self {
             loc: new_location_state_copy(empty_loc),
             next_loc: new_location_state_copy(ghost_spawn_locs[color]),
             scatter_target: new_location_state_copy(ghost_scatter_targets[color]),
-            game: game_state,
             color,
             trapped_steps: ghost_trapped_steps[color],
             fright_steps: 0,

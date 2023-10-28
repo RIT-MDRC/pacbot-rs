@@ -1,10 +1,10 @@
 use crate::game_state::GameState;
 
 // Enum-like declaration to hold the game mode options
-const PAUSED: u8 = 0;
-const SCATTER: u8 = 1;
-const CHASE: u8 = 2;
-const NUM_MODES: u8 = 3;
+pub const PAUSED: u8 = 0;
+pub const SCATTER: u8 = 1;
+pub const CHASE: u8 = 2;
+pub const NUM_MODES: u8 = 3;
 
 // Names of the modes (for logging)
 // var modeNames [numModes]string = [...]string{
@@ -17,13 +17,13 @@ const NUM_MODES: u8 = 3;
 
 impl GameState {
     // Helper function to get the game mode
-    fn get_mode(&self) -> u8 {
+    pub fn get_mode(&self) -> u8 {
         // Return the current game mode
         self.mode
     }
 
     // Helper function to set the game mode
-    fn set_mode(&mut self, mode: u8) {
+    pub fn set_mode(&mut self, mode: u8) {
         // Read the current game mode
         let curr_mode = self.get_mode();
 
@@ -38,7 +38,7 @@ impl GameState {
     /***************************** Last Unpaused Mode *****************************/
 
     // Helper function to get the last unpaused mode
-    fn get_last_unpaused_mode(&self) -> u8 {
+    pub fn get_last_unpaused_mode(&self) -> u8 {
         // If the current mode is not paused, return it
         if self.mode != PAUSED {
             return self.mode;
@@ -49,7 +49,7 @@ impl GameState {
     }
 
     // Helper function to set the game mode
-    fn set_last_unpaused_mode(&self, mode: u8) {
+    pub fn set_last_unpaused_mode(&self, mode: u8) {
         // Get the last unpaused mode
         let unpaused_mode = self.get_last_unpaused_mode();
 
@@ -67,12 +67,12 @@ impl GameState {
     /******************************** Pause / Play ********************************/
 
     // Helper function to determine if the game is paused
-    fn is_paused(&self) -> bool {
+    pub fn is_paused(&self) -> bool {
         self.getMode() == PAUSED
     }
 
     // Helper function to pause the game
-    fn pause(&self) {
+    pub fn pause(&self) {
         // If the game engine is already paused, there's no more to do
         if self.isPaused() {
             return;
@@ -90,7 +90,7 @@ impl GameState {
     }
 
     // Helper function to play the game
-    fn play(&self) {
+    pub fn play(&self) {
         // If the game engine is already playing or can't play, return
         if !self.is_paused() || self.get_lives() == 0 || self.get_curr_ticks() == 0xffff {
             return;
@@ -107,32 +107,32 @@ impl GameState {
     /*************************** Pausing on Next Update ***************************/
 
     // Helper function to return whether the game should pause after next update
-    fn get_pause_on_update(&self) -> bool {
+    pub fn get_pause_on_update(&self) -> bool {
         // Return whether the pause on update flag
         return self.pauseOnUpdate;
     }
 
     // Helper function to pause the game after the next update
-    fn set_pause_on_update(&self, flag: bool) {
+    pub fn set_pause_on_update(&self, flag: bool) {
         self.pause_on_update = flag // Set a flag to pause at the next update
     }
 
     /********************************* Mode Steps *********************************/
 
     // Helper function to get the number of steps until the mode changes
-    fn get_mode_steps(&self) -> u8 {
+    pub fn get_mode_steps(&self) -> u8 {
         // Return the mode steps
         return self.modeSteps;
     }
 
     // Helper function to set the number of steps until the mode changes
-    fn set_mode_steps(&self, steps: u8) {
+    pub fn set_mode_steps(&self, steps: u8) {
         // (Write) lock the mode steps
         self.modeSteps = steps; // Set the mode steps
     }
 
     // Helper function to decrement the number of steps until the mode changes
-    fn decrement_mode_steps(&self) {
+    pub fn decrement_mode_steps(&self) {
         if self.mode_steps != 0 {
             self.mode_steps -= 1; // Decrease the mode steps
         }

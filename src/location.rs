@@ -1,18 +1,18 @@
 /// Directions:                U   L   D   R  None
-const D_ROW: [i8; 5] = [-1, -0, 1, 0, 0];
-const D_COL: [i8; 5] = [-0, -1, 0, 1, 0];
+pub const D_ROW: [i8; 5] = [-1, -0, 1, 0, 0];
+pub const D_COL: [i8; 5] = [-0, -1, 0, 1, 0];
 
 /// Enum-like declaration to hold the direction indices from above
 
-const UP: u8 = 0;
-const LEFT: u8 = 1;
-const DOWN: u8 = 2;
-const RIGHT: u8 = 3;
-const NUM_DIRS: usize = 4;
-const NONE: usize = NUM_DIRS;
+pub const UP: u8 = 0;
+pub const LEFT: u8 = 1;
+pub const DOWN: u8 = 2;
+pub const RIGHT: u8 = 3;
+pub const NUM_DIRS: usize = 4;
+pub const NONE: u8 = 4;
 
 // Names of the directions (forr debugging)
-const DIR_NAMES: [&str; NUM_DIRS + 1] = ["up", "left", "down", "right", "none"];
+pub const DIR_NAMES: [&str; NUM_DIRS + 1] = ["up", "left", "down", "right", "none"];
 
 /*
 An object to keep track of the position and direction of an agent
