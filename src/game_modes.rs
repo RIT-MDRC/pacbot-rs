@@ -45,7 +45,7 @@ impl GameState {
         }
 
         // Return the last unpaused game mode
-        self.last_unpaused_mode
+        self.lastUnpausedMode
     }
 
     // Helper function to set the game mode
@@ -54,32 +54,32 @@ impl GameState {
         let unpaused_mode = self.get_last_unpaused_mode();
 
         // If the game is paused and the last unpaused mode changes, log the change
-        // if self.getMode() == PAUSED && unpausedMode != mode {
+        // if self.get_mode() == PAUSED && unpausedMode != mode {
         // 	log.Printf("\036[32mGAME: Mode changed while paused (%s -> %s) "+
         // 		"(t = %d)\033[0m\n",
         // 		modeNames[unpausedMode], modeNames[mode], self.getCurrTicks())
         // }
 
         // (Write) lock the game mode
-        self.last_unpaused_mode = mode // Update the game mode
+        self.lastUnpausedMode = mode; // Update the game mode
     }
 
     /******************************** Pause / Play ********************************/
 
     // Helper function to determine if the game is paused
     pub fn is_paused(&self) -> bool {
-        self.getMode() == PAUSED
+        self.get_mode() == PAUSED
     }
 
     // Helper function to pause the game
     pub fn pause(&self) {
         // If the game engine is already paused, there's no more to do
-        if self.isPaused() {
+        if self.is_paused() {
             return;
         }
 
         // Otherwise, save the current mode
-        self.set_last_unpaused_mode(self.getMode());
+        self.set_last_unpaused_mode(self.get_mode());
 
         // Set the mode to paused
         self.set_mode(PAUSED);
@@ -92,12 +92,12 @@ impl GameState {
     // Helper function to play the game
     pub fn play(&self) {
         // If the game engine is already playing or can't play, return
-        if !self.is_paused() || self.get_lives() == 0 || self.get_curr_ticks() == 0xffff {
+        if !self.is_paused() || self.getLives() == 0 {
             return;
         }
 
         // Otherwise, set the current mode to the last unpaused mode
-        self.setMode(self.getLastUnpausedMode())
+        self.set_mode(self.get_last_unpaused_mode())
 
         // Log message to alert the user
         // log.Printf("\033[32mGAME: Resumed (t = %d)\033[0m\n",
@@ -114,7 +114,7 @@ impl GameState {
 
     // Helper function to pause the game after the next update
     pub fn set_pause_on_update(&self, flag: bool) {
-        self.pause_on_update = flag // Set a flag to pause at the next update
+        self.pauseOnUpdate = flag; // Set a flag to pause at the next update
     }
 
     /********************************* Mode Steps *********************************/
@@ -133,8 +133,8 @@ impl GameState {
 
     // Helper function to decrement the number of steps until the mode changes
     pub fn decrement_mode_steps(&self) {
-        if self.mode_steps != 0 {
-            self.mode_steps -= 1; // Decrease the mode steps
+        if self.modeSteps != 0 {
+            self.modeSteps -= 1; // Decrease the mode steps
         }
     }
 }

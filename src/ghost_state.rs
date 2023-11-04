@@ -1,30 +1,17 @@
-use crate::location::LocationState;
+use crate::{
+    location::LocationState,
+    variables::{EMPTY_LOC, GHOST_SCATTER_TARGETS, GHOST_SPAWN_LOCS, GHOST_TRAPPED_STEPS},
+};
 
 // Enum-like declaration to hold the ghost colors
-const RED: u8 = 0;
-const PINK: u8 = 1;
-const CYAN: u8 = 2;
-const ORANGE: u8 = 3;
-const NUM_COLORS: u8 = 4;
-
-/*
-The number of "active" ghosts (the others are invisible and don't affect
-the progression of the game)
-*/
-const NUM_ACTIVE_GHOSTS: u8 = 4;
-
-// Configure the number of active ghosts
-fn config_num_active_ghosts(num_active_ghosts: u8) {
-    NUM_ACTIVE_GHOSTS = num_active_ghosts;
-}
+pub const RED: u8 = 0;
+pub const PINK: u8 = 1;
+pub const CYAN: u8 = 2;
+pub const ORANGE: u8 = 3;
+pub const NUM_COLORS: u8 = 4;
 
 // Names of the ghosts (not the nicknames, just the colors, for debugging)
-// var ghostNames [numColors]string = [...]string{
-// 	"red",
-// 	"pink",
-// 	"cyan",
-// 	"orange",
-// }
+pub const GHOST_NAMES: [&str; NUM_COLORS as usize] = ["red", "pink", "cyan", "orange"];
 
 /*
 An object to keep track of the location and attributes of a ghost
@@ -45,87 +32,82 @@ impl GhostState {
     pub fn new(color: u8) -> Self {
         // Ghost state object
         let mut g = Self {
-            loc: new_location_state_copy(empty_loc),
-            next_loc: new_location_state_copy(ghost_spawn_locs[color]),
-            scatter_target: new_location_state_copy(ghost_scatter_targets[color]),
+            loc: EMPTY_LOC,
+            next_loc: GHOST_SPAWN_LOCS[color as usize],
+            scatter_target: GHOST_SCATTER_TARGETS[color as usize],
             color,
-            trapped_steps: ghost_trapped_steps[color],
+            trapped_steps: GHOST_TRAPPED_STEPS[color as usize],
             fright_steps: 0,
             spawning: true,
             eaten: false,
         };
 
-        // If the color is greater than the number of active ghosts, hide this ghost
-        if color >= NUM_ACTIVE_GHOSTS {
-            g.next_loc = new_location_state_copy(empty_loc);
-        }
-
         // Return the ghost state
-        new
+        g
     }
 
     /*************************** Ghost Frightened State ***************************/
 
     // Set the fright steps of a ghost
-    pub fn set_fright_steps(steps: u8) {
-        g.frightSteps = steps;
+    pub fn set_fright_steps(&self, steps: u8) {
+        self.fright_steps = steps;
     }
 
     // Decrement the fright steps of a ghost
-    pub fn dec_fright_steps() {
-        g.frightSteps -= 1;
+    pub fn dec_fright_steps(&self) {
+        self.fright_steps -= 1;
     }
 
     // Get the fright steps of a ghost
-    pub fn get_fright_steps() -> u8 {
-        g.frightSteps
+    pub fn get_fright_steps(&self) -> u8 {
+        self.fright_steps
     }
 
     // Check if a ghost is frightened
-    pub fn is_frightened() -> bool {
+    pub fn is_frightened(&self) -> bool {
         // Return whether there is at least one fright step left
-        g.frightSteps > 0
+        self.fright_steps > 0
     }
 
     /****************************** Ghost Trap State ******************************/
 
     // Set the trapped steps of a ghost
-    pub fn set_trapped_steps(steps: u8) {
-        g.trapped_steps = steps;
+    pub fn set_trapped_steps(&self, steps: u8) {
+        self.trapped_steps = steps;
     }
 
     // Decrement the trapped steps of a ghost
-    pub fn dec_trapped_steps() {
-        g.trapped_steps -= 1;
+    pub fn dec_trapped_steps(&self) {
+        self.trapped_steps -= 1;
     }
 
     // Check if a ghost is trapped
-    pub fn is_trapped() -> bool {
+    pub fn is_trapped(&self) -> bool {
         // Return whether there is at least one fright step left
-        g.trapped_steps > 0
+        self.trapped_steps > 0
     }
 
     /**************************** Ghost Spawning State ****************************/
 
     // Set the ghost spawning flag
-    pub fn set_spawning(spawning: bool) {
-        g.spawning = spawning;
+    pub fn set_spawning(&self, spawning: bool) {
+        self.spawning = spawning;
     }
 
     /// Check if a ghost is spawning.
-    pub fn is_spawning() -> bool {
-        g.spawning
+    pub fn is_spawning(&self) -> bool {
+        self.spawning
     }
 
     /****************************** Ghost Eaten Flag ******************************/
 
     /// Set the ghost eaten flag.
-    pub fn set_eaten(eaten: bool) {
-        g.eaten = eaten;
+    pub fn set_eaten(&self, eaten: bool) {
+        self.eaten = eaten;
     }
 
     /// Check if a ghost is eaten.
-    pub fn is_eaten() -> bool {
-        g.eaten
+    pub fn is_eaten(&self) -> bool {
+        self.eaten
     }
 }

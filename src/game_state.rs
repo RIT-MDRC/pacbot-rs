@@ -18,14 +18,14 @@ pub struct GameState {
     updatePeriod: u8,
 
     /// Last unpaused mode (for pausing purposes).
-    lastUnpausedMode: u8,
+    pub lastUnpausedMode: u8,
     /// Game mode.
     pub mode: u8,
     /// Should pause when an update is ready.
-    pauseOnUpdate: bool,
+    pub pauseOnUpdate: bool,
 
     /// The number of steps (update periods) before the mode changes.
-    modeSteps: u8,
+    pub modeSteps: u8,
 
     /// The number of steps (update periods) before a speedup penalty starts.
     levelSteps: u16,
@@ -79,7 +79,7 @@ impl GameState {
             // Additional header-related info
             lastUnpausedMode: INIT_MODE,
             pauseOnUpdate: false,
-            modeSteps: MODE_DURATIONS[INIT_MODE],
+            modeSteps: MODE_DURATIONS[INIT_MODE as usize],
             levelSteps: LEVEL_DURATION,
 
             // Game info
@@ -308,24 +308,24 @@ impl GameState {
                 // CHASE -> SCATTER
                 CHASE => {
                     self.set_mode(SCATTER);
-                    self.set_mode_steps(MODE_DURATIONS[SCATTER]);
+                    self.set_mode_steps(MODE_DURATIONS[SCATTER as usize]);
                 }
                 // SCATTER -> CHASE
                 SCATTER => {
                     self.set_mode(CHASE);
-                    self.set_mode_steps(MODE_DURATIONS[CHASE]);
+                    self.set_mode_steps(MODE_DURATIONS[CHASE as usize]);
                 }
                 PAUSED => {
                     match self.get_last_unpaused_mode() {
                         // CHASE -> SCATTER
                         CHASE => {
                             self.set_last_unpaused_mode(SCATTER);
-                            self.set_mode_steps(MODE_DURATIONS[SCATTER]);
+                            self.set_mode_steps(MODE_DURATIONS[SCATTER as usize]);
                         }
                         // SCATTER -> CHASE
                         SCATTER => {
                             self.set_last_unpaused_mode(CHASE);
-                            self.set_mode_steps(MODE_DURATIONS[CHASE]);
+                            self.set_mode_steps(MODE_DURATIONS[CHASE as usize]);
                         }
                     }
                 }

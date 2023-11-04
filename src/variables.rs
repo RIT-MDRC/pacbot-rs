@@ -22,7 +22,7 @@ pub const LEVEL_PENALTY_DURATION: u16 = 240; // 2 min (24fps, update period = 12
 pub const INIT_MODE: u8 = SCATTER;
 
 /// The lengths of the game modes, in units of steps (update periods)
-pub const MODE_DURATIONS: [u8; _] = [
+pub const MODE_DURATIONS: [u8; 3] = [
     255, // paused
     60,  // scatter - 30 seconds at 24 fps
     180, // chase   - 90 seconds at 24 fps
@@ -54,7 +54,7 @@ pub const FRUIT_POINTS: u16 = 100;
 pub const EMPTY_LOC: LocationState = LocationState::new(32, 32, NONE);
 
 // Spawn positions for the ghosts
-pub const GHOST_SPAWN_LOCS: [LocationState; _] = [
+pub const GHOST_SPAWN_LOCS: [LocationState; 4] = [
     LocationState::new(11, 13, LEFT), // red
     LocationState::new(13, 13, DOWN), // pink
     LocationState::new(14, 11, UP),   // cyan
@@ -62,7 +62,7 @@ pub const GHOST_SPAWN_LOCS: [LocationState; _] = [
 ];
 
 // Scatter targets for the ghosts - should remain constant
-pub const GHOST_SCATTER_TARGETS: [LocationState; _] = [
+pub const GHOST_SCATTER_TARGETS: [LocationState; 4] = [
     LocationState::new(-3, 25, NONE), // red
     LocationState::new(-3, 2, NONE),  // pink
     LocationState::new(31, 27, NONE), // cyan
@@ -70,7 +70,7 @@ pub const GHOST_SCATTER_TARGETS: [LocationState; _] = [
 ];
 
 // The number of steps that the ghosts stay in the trapped state for
-pub const GHOST_TRAPPED_STEPS: [u8; _] = [
+pub const GHOST_TRAPPED_STEPS: [u8; 4] = [
     0,  // red
     5,  // pink
     16, // cyan
@@ -144,7 +144,7 @@ pub const INIT_PELLETS: [u32; 31] = [
 
 // Column-wise, this may look backwards; column 0 is at bit 0 on the right
 // (Tip: Ctrl+F '0' to see the valid Pacman locations)
-pub const INIT_WALLS: [u32; _] = [
+pub const INIT_WALLS: [u32; 31] = [
     //                middle
     // col:             vv    8 6 4 2 0
     0b0000_1111111111111111111111111111, // row 0

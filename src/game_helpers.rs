@@ -1,6 +1,6 @@
 /***************************** Bitwise Operations *****************************/
 
-use crate::{game_state::GameState, location::{LEFT, NONE}};
+use crate::game_state::GameState;
 
 fn get_bit_u8(num: u8, bit_idx: usize) -> bool {
 	((num >> bit_idx) & 1) == 1
@@ -28,7 +28,7 @@ fn modify_bit_u8(num: &mut u8, bit_idx: usize, bit_val: bool) {
 impl GameState {
 
 // Determines if the game state is ready to update
-fn updateReady (&self,) -> bool {
+pub fn updateReady (&self,) -> bool {
 
 	// Get the current ticks value
 	let currTicks = self.getCurrTicks();
@@ -148,7 +148,7 @@ fn distSq (&self,row1: usize, col1: usize, row2: usize, col2: usize) -> usize {
 /***************************** Collision Handling *****************************/
 
 // Check collisions between Pacman and all the ghosts
-fn checkCollisions (&self,) {
+pub fn checkCollisions (&self,) {
 
 	// Flag to decide which ghosts should respawn
 	let ghostRespawnFlag = 0;
@@ -275,7 +275,7 @@ fn movePacmanDir (&self,dir: u8) {
 }
 
 // Move Pacman back to its spawn point, if necessary
-fn tryRespawnPacman (&self,) {
+pub fn tryRespawnPacman (&self,) {
 
 	// Set Pacman to be in its original state
 	if self.pacmanLoc.isEmpty() && self.getLives() > 0 {
@@ -305,7 +305,7 @@ fn frightenAllGhosts (&self,) {
 }
 
 // Reverse all ghosts at once (similar to frightenAllGhosts)
-fn reverseAllGhosts (&self,) {
+pub fn reverseAllGhosts (&self,) {
 
 	// Loop over all the ghosts
 	for ghost in self.ghosts {
@@ -377,7 +377,7 @@ fn respawnGhosts (&self,
 }
 
 // Update all ghosts at once
-fn updateAllGhosts (&self,) {
+pub fn updateAllGhosts (&self,) {
 	// Add relevant ghosts to a wait group
 	self.wgGhosts.Add(int(numColors))
 
@@ -391,7 +391,7 @@ fn updateAllGhosts (&self,) {
 }
 
 // A game state function to plan all ghosts at once
-fn planAllGhosts (&self,) {
+pub fn planAllGhosts (&self,) {
 	// Add pending ghost plans
 	self.wgGhosts.Add(int(numColors));
 
