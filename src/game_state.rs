@@ -109,19 +109,19 @@ impl GameState {
     /**************************** Curr Ticks Functions ****************************/
 
     /// Helper function to increment the current ticks
-    fn nextTick(&mut self) {
+    pub fn nextTick(&mut self) {
         self.currTicks += 1;
     }
 
     /**************************** Upd Period Functions ****************************/
 
     /// Helper function to get the update period
-    fn getUpdatePeriod(&self) -> u8 {
+    pub fn getUpdatePeriod(&self) -> u8 {
         self.updatePeriod
     }
 
     /// Helper function to set the update period
-    fn setUpdatePeriod(&mut self, period: u8) {
+    pub fn setUpdatePeriod(&mut self, period: u8) {
         // Send a message to the terminal
         println!(
             "\x1b[36mGAME: Update period changed ({} -> {}) (t = {})\x1b[0m\n",
@@ -140,24 +140,24 @@ impl GameState {
     /**************************** Game Score Functions ****************************/
 
     /// Helper function to get the current score of the game
-    fn getScore(&self) -> u16 {
+    pub fn getScore(&self) -> u16 {
         self.currScore
     }
 
     /// (For performance) helper function to increment the current score of the game
-    fn incrementScore(&mut self, change: u16) {
+    pub fn incrementScore(&mut self, change: u16) {
         self.currScore = self.currScore.saturating_add(change);
     }
 
     /**************************** Game Level Functions ****************************/
 
     /// Helper function to get the current level of the game
-    fn getLevel(&self) -> u8 {
+    pub fn getLevel(&self) -> u8 {
         self.currLevel
     }
 
     /// Helper function to set the current level of the game
-    fn setLevel(&self, level: u8) {
+    pub fn setLevel(&self, level: u8) {
         self.currLevel = level; // Update the level
 
         // Adjust the initial update period accordingly
@@ -166,7 +166,7 @@ impl GameState {
     }
 
     /// Helper function to increment the game level
-    fn incrementLevel(&self) {
+    pub fn incrementLevel(&self) {
         // Keep track of the current level
         let level = self.getLevel();
 
@@ -189,12 +189,12 @@ impl GameState {
     /**************************** Game Level Functions ****************************/
 
     /// Helper function to get the lives left
-    fn getLives(&self) -> u8 {
+    pub fn getLives(&self) -> u8 {
         self.currLives
     }
 
     /// Helper function to set the lives left
-    fn setLives(&self, lives: u8) {
+    pub fn setLives(&self, lives: u8) {
         // Send a message to the terminal
         println!(
             "\x1b[36mGAME: Lives changed ({} -> {})\x1b[0m\n",
@@ -206,7 +206,7 @@ impl GameState {
     }
 
     /// Helper function to decrement the lives left
-    fn decrementLives(&self) {
+    pub fn decrementLives(&self) {
         // Keep track of how many lives Pacman has left
         let lives = self.getLives();
 
@@ -229,19 +229,19 @@ impl GameState {
     /****************************** Pellet Functions ******************************/
 
     /// Helper function to get the number of pellets
-    fn getNumPellets(&self) -> u16 {
+    pub fn getNumPellets(&self) -> u16 {
         self.numPellets
     }
 
     /// Helper function to decrement the number of pellets
-    fn decrementNumPellets(&self) {
+    pub fn decrementNumPellets(&self) {
         if self.numPellets != 0 {
             self.numPellets -= 1;
         }
     }
 
     /// Reset all the pellets on the board
-    fn resetPellets(&self) {
+    pub fn resetPellets(&self) {
         // Copy over pellet bit array
         self.pellets = INIT_PELLETS;
 
@@ -252,22 +252,22 @@ impl GameState {
     /************************** Fruit Spawning Functions **************************/
 
     /// Helper function to get the number of steps until the fruit disappears
-    fn getFruitSteps(&self) -> u8 {
+    pub fn getFruitSteps(&self) -> u8 {
         self.fruitSteps
     }
 
     /// Helper function to determine whether fruit exists
-    fn fruitExists(&self) -> bool {
+    pub fn fruitExists(&self) -> bool {
         self.getFruitSteps() > 0
     }
 
     /// Helper function to set the number of steps until the fruit disappears
-    fn setFruitSteps(&self, steps: u8) {
+    pub fn setFruitSteps(&self, steps: u8) {
         self.fruitSteps = steps; // Set the fruit steps
     }
 
     /// Helper function to decrement the number of fruit steps
-    fn decrementFruitSteps(&self) {
+    pub fn decrementFruitSteps(&self) {
         if self.fruitSteps != 0 {
             self.fruitSteps -= 1; // Decrease the fruit steps
         }
@@ -276,17 +276,17 @@ impl GameState {
     /***************************** Level Steps Passed *****************************/
 
     /// Helper function to get the number of steps until the level speeds up
-    fn getLevelSteps(&self) -> u16 {
+    pub fn getLevelSteps(&self) -> u16 {
         self.levelSteps
     }
 
     /// Helper function to set the number of steps until the level speeds up
-    fn setLevelSteps(&self, steps: u16) {
+    pub fn setLevelSteps(&self, steps: u16) {
         self.levelSteps = steps; // Set the level steps
     }
 
     /// Helper function to decrement the number of steps until the mode changes
-    fn decrementLevelSteps(&self) {
+    pub fn decrementLevelSteps(&self) {
         if self.levelSteps != 0 {
             self.levelSteps -= 1; // Decrease the level steps
         }
@@ -295,7 +295,7 @@ impl GameState {
     /***************************** Step-Related Events ****************************/
 
     /// Helper function to handle step-related events, if the mode steps hit 0
-    fn handleStepEvents(&self) {
+    pub fn handleStepEvents(&self) {
         // Get the current mode steps
         let modeSteps = self.get_mode_steps();
 
@@ -348,7 +348,7 @@ impl GameState {
         }
 
         // Decrement the mode steps
-        self.decrementModeSteps();
+        self.decrement_mode_steps();
 
         // Decrement the level steps
         self.decrementLevelSteps();
