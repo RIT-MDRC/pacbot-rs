@@ -12,10 +12,10 @@ use crate::{
 pub struct GameState {
     /* Message header - 4 bytes */
     /// Current ticks.
-    currTicks: u32,
+    pub currTicks: u32,
 
     /// Ticks / update.
-    updatePeriod: u8,
+    pub updatePeriod: u8,
 
     /// Last unpaused mode (for pausing purposes).
     pub lastUnpausedMode: u8,
@@ -28,43 +28,43 @@ pub struct GameState {
     pub modeSteps: u8,
 
     /// The number of steps (update periods) before a speedup penalty starts.
-    levelSteps: u16,
+    pub levelSteps: u16,
 
     /* Game information - 4 bytes */
     /// Current score
-    currScore: u16,
+    pub currScore: u16,
 
     /// Current level (by default, starts at 1)
-    currLevel: u8,
+    pub currLevel: u8,
 
     /// Current lives (by default, starts at 3)
-    currLives: u8,
+    pub currLives: u8,
 
     /* Pacman location - 2 bytes */
-    pacmanLoc: LocationState,
+    pub pacmanLoc: LocationState,
 
     /* Fruit location - 2 bytes */
-    fruitLoc: LocationState,
+    pub fruitLoc: LocationState,
 
     /// The number of steps (update periods) before fruit disappears
-    fruitSteps: u8,
+    pub fruitSteps: u8,
 
     /* Ghosts - 4 * 3 = 12 bytes */
-    ghosts: [GhostState; 4],
+    pub ghosts: [GhostState; 4],
 
     /// A variable to keep track of the current ghost combo
-    ghostCombo: u8,
+    pub ghostCombo: u8,
 
     /* Pellet State - 31 * 4 = 124 bytes */
     /// Pellets encoded within an array, with each uint32 acting as a bit array
-    pellets: [u32; MAZE_ROWS],
+    pub pellets: [u32; MAZE_ROWS],
 
     /// Number of pellets
-    numPellets: u16,
+    pub numPellets: u16,
 
     /* Auxiliary (non-serialized) state information */
     /// Wall state
-    walls: [u32; MAZE_ROWS],
+    pub walls: [u32; MAZE_ROWS],
 }
 
 impl GameState {
