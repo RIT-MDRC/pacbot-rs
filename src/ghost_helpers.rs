@@ -15,16 +15,14 @@ impl GhostState {
     pub fn reset(&mut self) {
         // Set the ghost to be trapped, spawning, and not frightened
         self.set_spawning(true);
+        self.set_eaten(false);
         self.set_trapped_steps(GHOST_TRAPPED_STEPS[self.color as usize]);
         self.set_fright_steps(0);
 
         // Set the current ghost to be at an empty location
         self.loc = EMPTY_LOC;
 
-        /*
-            Set the current location of the ghost to be its spawn point
-            (or pink's spawn location, in the case of red, so it spawns in the box)
-        */
+        // Set the current location of the ghost to be its spawn point
         self.next_loc = GHOST_SPAWN_LOCS[self.color as usize];
     }
 
@@ -39,17 +37,10 @@ impl GhostState {
         // Set the current ghost to be at an empty location
         self.loc = EMPTY_LOC;
 
-        /*
-            Set the current location of the ghost to be its spawn point
-            (or pink's spawn location, in the case of red, so it spawns in the box)
-        */
-        if self.color == RED {
-            self.next_loc
-                .update_coords(GHOST_SPAWN_LOCS[PINK as usize].get_coords())
-        } else {
-            self.next_loc
-                .update_coords(GHOST_SPAWN_LOCS[self.color as usize].get_coords())
-        }
+        // Set the current location of the ghost to be its spawn point
+        // (or pink's spawn location, in the case of red, so it spawns in the box)
+        let spawn_loc_color = if self.color == RED { PINK } else { self.color };
+        self.next_loc = GHOST_SPAWN_LOCS[spawn_loc_color as usize];
         self.next_loc.dir = UP;
     }
 

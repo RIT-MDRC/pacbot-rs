@@ -142,45 +142,39 @@ impl GameState {
 
     // Check collisions between Pacman and all the ghosts, and respawn ghosts/Pacman as necessary.
     pub fn checkCollisions(&mut self) {
-        // Flag to decide which ghosts should respawn
-        let mut ghostRespawnFlags = [false; 4];
-
-        // Loop over all the ghosts
-        for (ghost, should_respawn) in self.ghosts().zip(&mut ghostRespawnFlags) {
-            // Check each collision individually
+        // Loop over all the ghosts and check for collisions with Pacman.
+        let mut num_ghosts_eaten = 0;
+        let mut did_pacman_die = false;
+        for mut ghost in self.ghosts_mut() {
             if self.pacmanLoc.collides_with(ghost.loc) {
-                // If the ghost was already eaten, skip it
+                // If the ghost was already eaten, skip it.
                 if ghost.is_eaten() {
                     continue;
                 }
 
-                // If the ghost is frightened, Pacman eats it, otherwise Pacman dies
+                // If the ghost is frightened, Pacman eats it, otherwise Pacman dies.
                 if ghost.is_frightened() {
-                    *should_respawn = true;
+                    // Respawn the ghost.
+                    ghost.respawn();
+
+                    num_ghosts_eaten += 1;
                 } else {
-                    self.deathReset();
-                    return;
+                    did_pacman_die = true;
+                    break;
                 }
             }
         }
 
-        // Loop over the ghost colors again, to decide which should respawn
-        let mut num_ghosts_eaten = 0;
-        for (mut ghost, should_respawn) in self.ghosts_mut().zip(ghostRespawnFlags) {
-            // If the ghost should respawn, do so and increase the score and combo
-            if should_respawn {
-                // Respawn the ghost
-                ghost.respawn();
-                num_ghosts_eaten += 1;
+        if did_pacman_die {
+            self.deathReset();
+        } else {
+            for _ in 0..num_ghosts_eaten {
+                // Add points corresponding to the current combo length.
+                self.incrementScore(COMBO_MULTIPLIER << self.ghostCombo);
+
+                // Increment the ghost respawn combo.
+                self.ghostCombo += 1;
             }
-        }
-
-        for _ in 0..num_ghosts_eaten {
-            // Add points corresponding to the current combo length
-            self.incrementScore(COMBO_MULTIPLIER << self.ghostCombo);
-
-            // Increment the ghost respawn combo
-            self.ghostCombo += 1;
         }
     }
 
