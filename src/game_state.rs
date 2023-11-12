@@ -43,7 +43,7 @@ pub struct GameState {
     /* Ghosts - 4 * 3 = 12 bytes */
     pub ghosts: [GhostState; 4],
 
-    /// A variable to keep track of the current ghost combo
+    /// The current ghost combo.
     pub ghostCombo: u8,
 
     /* Pellet State - 31 * 4 = 124 bytes */

@@ -61,7 +61,7 @@ impl GameState {
     Collects a pellet if it is at a given location
     Returns the number of pellets that are left
     */
-    fn collectPellet(&self, pos: Position) {
+    fn collectPellet(&mut self, pos: Position) {
         let (row, col) = pos;
 
         // Collect fruit, if applicable
@@ -141,7 +141,7 @@ impl GameState {
     /***************************** Collision Handling *****************************/
 
     // Check collisions between Pacman and all the ghosts, and respawn ghosts/Pacman as necessary.
-    pub fn checkCollisions(&self) {
+    pub fn checkCollisions(&mut self) {
         // Flag to decide which ghosts should respawn
         let mut ghostRespawnFlags = [false; 4];
 
@@ -165,25 +165,29 @@ impl GameState {
         }
 
         // Loop over the ghost colors again, to decide which should respawn
-        for (ghost, should_respawn) in self.ghosts.iter().zip(ghostRespawnFlags) {
+        let mut num_ghosts_eaten = 0;
+        for (ghost, should_respawn) in self.ghosts.iter_mut().zip(ghostRespawnFlags) {
             // If the ghost should respawn, do so and increase the score and combo
             if should_respawn {
                 // Respawn the ghost
                 ghost.respawn();
-
-                // Add points corresponding to the current combo length
-                self.incrementScore(COMBO_MULTIPLIER << self.ghostCombo);
-
-                // Increment the ghost respawn combo
-                self.ghostCombo += 1;
+                num_ghosts_eaten += 1;
             }
+        }
+
+        for _ in 0..num_ghosts_eaten {
+            // Add points corresponding to the current combo length
+            self.incrementScore(COMBO_MULTIPLIER << self.ghostCombo);
+
+            // Increment the ghost respawn combo
+            self.ghostCombo += 1;
         }
     }
 
     /***************************** Event-Based Resets *****************************/
 
     // Reset the board (while leaving pellets alone) after Pacman dies
-    fn deathReset(&self) {
+    fn deathReset(&mut self) {
         // Set Pacman to be in an empty state
         self.pacmanLoc = EMPTY_LOC;
 
@@ -207,7 +211,7 @@ impl GameState {
     }
 
     // Reset the board (including pellets) after Pacman clears a level
-    fn levelReset(&self) {
+    fn levelReset(&mut self) {
         // Set Pacman to be in an empty state
         self.pacmanLoc = EMPTY_LOC;
 
@@ -231,7 +235,7 @@ impl GameState {
     /************************** Motion (Pacman Location) **************************/
 
     // Move Pacman one space in a given direction
-    fn movePacmanDir(&self, dir: u8) {
+    fn movePacmanDir(&mut self, dir: u8) {
         // Check collisions with all the ghosts
         self.checkCollisions();
 
@@ -252,7 +256,7 @@ impl GameState {
     }
 
     // Move Pacman back to its spawn point, if necessary
-    pub fn tryRespawnPacman(&self) {
+    pub fn tryRespawnPacman(&mut self) {
         // Set Pacman to be in its original state
         if self.pacmanLoc.is_empty() && self.getLives() > 0 {
             self.pacmanLoc = PACMAN_SPAWN_LOC;
@@ -262,12 +266,12 @@ impl GameState {
     /******************************* Ghost Movement *******************************/
 
     // Frighten all ghosts at once
-    fn frightenAllGhosts(&self) {
+    fn frightenAllGhosts(&mut self) {
         // Reset the ghost respawn combo back to 0
         self.ghostCombo = 0;
 
         // Loop over all the ghosts
-        for ghost in self.ghosts {
+        for ghost in &mut self.ghosts {
             /*
                 To frighten a ghost, set its fright steps to a specified value
                 and trap it for one step (to force the direction to reverse)
@@ -280,9 +284,9 @@ impl GameState {
     }
 
     // Reverse all ghosts at once (similar to frightenAllGhosts)
-    pub fn reverseAllGhosts(&self) {
+    pub fn reverseAllGhosts(&mut self) {
         // Loop over all the ghosts
-        for ghost in self.ghosts {
+        for ghost in &mut self.ghosts {
             /*
                 To change the direction a ghost, trap it for one step
                 (to force the direction to reverse)
@@ -294,12 +298,12 @@ impl GameState {
     }
 
     // Reset all ghosts at once
-    fn resetAllGhosts(&self) {
+    fn resetAllGhosts(&mut self) {
         // Reset the ghost respawn combo back to 0
         self.ghostCombo = 0;
 
         // Reset each of the ghosts
-        for ghost in self.ghosts {
+        for ghost in &mut self.ghosts {
             ghost.reset();
         }
 
@@ -317,17 +321,17 @@ impl GameState {
     }
 
     // Update all ghosts at once
-    pub fn updateAllGhosts(&self) {
+    pub fn updateAllGhosts(&mut self) {
         // Loop over the individual ghosts
-        for ghost in &self.ghosts {
+        for ghost in &mut self.ghosts {
             ghost.update();
         }
     }
 
     // A game state function to plan all ghosts at once
-    pub fn planAllGhosts(&self) {
+    pub fn planAllGhosts(&mut self) {
         // Plan each ghost's next move concurrently
-        for ghost in &self.ghosts {
+        for ghost in &mut self.ghosts {
             ghost.plan(self);
         }
     }
@@ -395,6 +399,7 @@ impl GameState {
             PINK => self.getChaseTargetPink(),
             CYAN => self.getChaseTargetCyan(),
             ORANGE => self.getChaseTargetOrange(),
+            _ => unreachable!(), // TODO: convert color to a proper enum
         }
     }
 }
