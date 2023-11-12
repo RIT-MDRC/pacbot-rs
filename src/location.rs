@@ -25,7 +25,7 @@ pub struct LocationState {
 }
 
 impl LocationState {
-    pub fn new(row: i8, col: i8, dir: u8) -> Self {
+    pub const fn new(row: i8, col: i8, dir: u8) -> Self {
         Self { row, col, dir }
     }
 
@@ -113,7 +113,7 @@ impl LocationState {
 }
 
 // Returns the squared Euclidean distance between two points.
-pub fn distSq(p1: (i8, i8), p2: (i8, i8)) -> u32 {
+pub fn dist_sq(p1: (i8, i8), p2: (i8, i8)) -> u32 {
     let row1: i32 = p1.0.into();
     let col1: i32 = p1.1.into();
     let row2: i32 = p2.0.into();

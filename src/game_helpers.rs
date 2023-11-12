@@ -380,7 +380,7 @@ impl GameState {
         let orange_pos = self.ghosts[ORANGE as usize].loc.get_coords();
 
         // If Pacman is far enough from the ghost, return Pacman's location
-        if distSq(orange_pos, pacman_pos) >= 64 {
+        if dist_sq(orange_pos, pacman_pos) >= 64 {
             return pacman_pos;
         }
 

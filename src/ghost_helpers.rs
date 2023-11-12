@@ -4,7 +4,7 @@ use crate::{
     game_modes::GameMode,
     game_state::GameState,
     ghost_state::{GhostState, PINK, RED},
-    location::{distSq, DOWN, NUM_DIRS, UP},
+    location::{dist_sq, DOWN, NUM_DIRS, UP},
     variables::{EMPTY_LOC, GHOST_HOUSE_EXIT_POS, GHOST_SPAWN_LOCS, GHOST_TRAPPED_STEPS},
 };
 
@@ -148,7 +148,7 @@ impl GhostState {
             valid_moves.choose(&mut rand::thread_rng())
         } else {
             // Otherwise, pick the move that takes the ghost closest to its target.
-            valid_moves.max_by_key(|&(_dir, loc)| distSq(loc, (targetRow, targetCol)))
+            valid_moves.max_by_key(|&(_dir, loc)| dist_sq(loc, (targetRow, targetCol)))
         }
         .expect("ghost has no valid moves!");
 
