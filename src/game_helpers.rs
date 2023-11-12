@@ -6,14 +6,6 @@ use crate::{
     game_modes::GameMode, game_state::GameState, ghost_state::*, location::*, variables::*,
 };
 
-fn get_bit_u8(num: u8, bit_idx: usize) -> bool {
-    ((num >> bit_idx) & 1) == 1
-}
-
-fn get_bit_u16(num: u16, bit_idx: usize) -> bool {
-    ((num >> bit_idx) & 1) == 1
-}
-
 fn get_bit_u32(num: u32, bit_idx: usize) -> bool {
     ((num >> bit_idx) & 1) == 1
 }
@@ -229,7 +221,7 @@ impl GameState {
     /************************** Motion (Pacman Location) **************************/
 
     // Move Pacman one space in a given direction
-    fn movePacmanDir(&mut self, dir: u8) {
+    pub fn movePacmanDir(&mut self, dir: u8) {
         // Check collisions with all the ghosts
         self.checkCollisions();
 

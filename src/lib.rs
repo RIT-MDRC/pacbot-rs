@@ -1,8 +1,8 @@
-mod game_engine;
+pub mod game_engine;
 mod game_helpers;
-mod game_modes;
-mod game_state;
+pub mod game_modes;
+pub mod game_state;
 mod ghost_helpers;
-mod ghost_state;
-mod location;
-mod variables;
+pub mod ghost_state;
+pub mod location;
+pub mod variables;
