@@ -123,12 +123,12 @@ impl GameState {
 
     // Determines if a wall is at a given location
     pub fn wallAt(&self, pos: Position) -> bool {
-        let (row, col) = pos;
         if !self.inBounds(pos) {
             return true;
         }
 
         // Returns the bit of the wall row corresponding to the column
+        let (row, col) = pos;
         get_bit_u32(self.walls[row as usize], col as usize)
     }
 
@@ -327,8 +327,8 @@ impl GameState {
     // A game state function to plan all ghosts at once
     pub fn planAllGhosts(&self) {
         // Plan each ghost's next move concurrently
-        for ghost in self.ghosts {
-            ghost.plan();
+        for ghost in &self.ghosts {
+            ghost.plan(self);
         }
     }
 

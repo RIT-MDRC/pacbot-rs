@@ -84,7 +84,7 @@ impl GhostState {
     /******************** Ghost Planning (after serialization) ********************/
 
     /// Plan the ghost's next move
-    pub fn plan(&self) {
+    pub fn plan(&self, game_state: &GameState) {
         // If the location is empty (i.e. after a reset/respawn), don't plan
         if self.loc.is_empty() {
             return;
