@@ -28,8 +28,7 @@ pub const INIT_LEVEL: u8 = 1;
 pub const INIT_LIVES: u8 = 3;
 
 /// The coordinates where the ghost house exit is located
-pub const GHOST_HOUSE_EXIT_ROW: i8 = 12;
-pub const GHOST_HOUSE_EXIT_COL: i8 = 13;
+pub const GHOST_HOUSE_EXIT_POS: (i8, i8) = (12, 13);
 
 /// Spawn position for Pacman
 pub const PACMAN_SPAWN_LOC: LocationState = LocationState::new(23, 13, RIGHT);

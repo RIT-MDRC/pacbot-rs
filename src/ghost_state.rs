@@ -58,11 +58,6 @@ impl GhostState {
         self.fright_steps -= 1;
     }
 
-    // Get the fright steps of a ghost
-    pub fn get_fright_steps(&self) -> u8 {
-        self.fright_steps
-    }
-
     // Check if a ghost is frightened
     pub fn is_frightened(&self) -> bool {
         // Return whether there is at least one fright step left

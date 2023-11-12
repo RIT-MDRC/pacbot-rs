@@ -1,21 +1,18 @@
-use rand::Rng;
+use rand::seq::IteratorRandom;
 
 use crate::{
     game_modes::GameMode,
     game_state::GameState,
-    ghost_state::{GhostState, GHOST_NAMES, PINK, RED},
-    location::{distSq, DIR_NAMES, DOWN, NUM_DIRS, UP},
-    variables::{
-        EMPTY_LOC, GHOST_HOUSE_EXIT_COL, GHOST_HOUSE_EXIT_ROW, GHOST_SPAWN_LOCS,
-        GHOST_TRAPPED_STEPS,
-    },
+    ghost_state::{GhostState, PINK, RED},
+    location::{distSq, DOWN, NUM_DIRS, UP},
+    variables::{EMPTY_LOC, GHOST_HOUSE_EXIT_POS, GHOST_SPAWN_LOCS, GHOST_TRAPPED_STEPS},
 };
 
 impl GhostState {
     /******************************** Ghost Resets ********************************/
 
     /// Respawn the ghost
-    pub fn reset(&self) {
+    pub fn reset(&mut self) {
         // Set the ghost to be trapped, spawning, and not frightened
         self.set_spawning(true);
         self.set_trapped_steps(GHOST_TRAPPED_STEPS[self.color as usize]);
@@ -34,7 +31,7 @@ impl GhostState {
     /****************************** Ghost Respawning ******************************/
 
     /// Respawn the ghost
-    pub fn respawn(&self) {
+    pub fn respawn(&mut self) {
         // Set the ghost to be eaten and spawning
         self.set_spawning(true);
         self.set_eaten(true);
@@ -59,7 +56,7 @@ impl GhostState {
     /******************** Ghost Updates (before serialization) ********************/
 
     /// Update the ghost's position
-    pub fn update(&self) {
+    pub fn update(&mut self) {
         // If the ghost is at the red spawn point and not moving downwards,
         // we can mark it as done spawning.
         if self.loc.collides_with(GHOST_SPAWN_LOCS[RED as usize]) && self.loc.dir != DOWN {
@@ -84,7 +81,7 @@ impl GhostState {
     /******************** Ghost Planning (after serialization) ********************/
 
     /// Plan the ghost's next move
-    pub fn plan(&self, game_state: &GameState) {
+    pub fn plan(&mut self, game_state: &GameState) {
         // If the location is empty (i.e. after a reset/respawn), don't plan
         if self.loc.is_empty() {
             return;
@@ -100,18 +97,14 @@ impl GhostState {
             return;
         }
 
-        // Keep local copies of the fright steps and spawning variables
-        let frightSteps = self.get_fright_steps();
-        let spawning = self.is_spawning();
-
         // Decide on a target for this ghost, depending on the game mode.
         /*
             If the ghost is spawning in the ghost house, choose red's spawn
-            location as the target to encourage it to leave the ghost house
+            location as the target to encourage it to leave the ghost house.
 
-            Otherwise: pick chase or scatter targets, depending on the mode
+            Otherwise: pick chase or scatter targets, depending on the mode.
         */
-        let (targetRow, targetCol) = if spawning
+        let (targetRow, targetCol) = if self.spawning
             && !self.loc.collides_with(GHOST_SPAWN_LOCS[RED as usize])
             && !self.next_loc.collides_with(GHOST_SPAWN_LOCS[RED as usize])
         {
@@ -123,90 +116,43 @@ impl GhostState {
             }
         };
 
-        /*
-            Determine whether each of the four neighboring moves to the next
-            location is valid, and count how many are good
-        */
-        let numValidMoves = 0;
-        let moveValid = [false; NUM_DIRS];
-        let moveDistSq = [0; NUM_DIRS];
-        for dir in 0..NUM_DIRS {
-            // Get the neighboring cell in that location
-            let (row, col) = self.next_loc.get_neighbor_coords(dir as u8);
+        // Determine which of the four neighboring moves to the next location are valid.
+        let moves = (0..NUM_DIRS as u8).map(|dir| (dir, self.next_loc.get_neighbor_coords(dir)));
+        let valid_moves = moves.filter(|&(dir, loc)| {
+            // If this move would make the ghost reverse, skip it.
+            if dir == self.next_loc.get_reversed_dir() {
+                return false;
+            }
 
-            // Calculate the distance from the target to the move location
-            moveDistSq[dir] = distSq((row, col), (targetRow, targetCol));
-
-            // Determine if that move is valid
-            moveValid[dir] = !game_state.wallAt((row, col));
-
-            // Considerations when the ghost is spawning
-            if spawning {
-                // Determine if the move would be within the ghost house
-                if game_state.ghostSpawnAt((row, col)) {
-                    moveValid[dir] = true;
+            // Considerations when the ghost is spawning.
+            if self.spawning {
+                // Determine if the move would be within the ghost house.
+                if game_state.ghostSpawnAt(loc) {
+                    return true;
                 }
 
                 // Determine if the move would help the ghost escape the ghost house,
-                // and make it a valid one if so
-                if row == GHOST_HOUSE_EXIT_ROW && col == GHOST_HOUSE_EXIT_COL {
-                    moveValid[dir] = true;
+                // and make it a valid one if so.
+                if loc == GHOST_HOUSE_EXIT_POS {
+                    return true;
                 }
             }
 
-            // If this move would make the ghost reverse, skip it
-            if dir as u8 == self.next_loc.get_reversed_dir() {
-                moveValid[dir] = false;
-            }
+            // Otherwise, the move is valid if it does not move into a wall.
+            !game_state.wallAt(loc)
+        });
 
-            // Increment the valid moves counter if necessary
-            if moveValid[dir] {
-                numValidMoves += 1;
-            }
+        let chosen_move = if self.fright_steps > 1 {
+            // If the ghost will still be frightened one tick later, immediately choose
+            // a random valid direction and return.
+            valid_moves.choose(&mut rand::thread_rng())
+        } else {
+            // Otherwise, pick the move that takes the ghost closest to its target.
+            valid_moves.max_by_key(|&(_dir, loc)| distSq(loc, (targetRow, targetCol)))
         }
+        .expect("ghost has no valid moves!");
 
-        // Debug statement, in case a ghost somehow is surrounded by all walls
-        if numValidMoves == 0 {
-            let (row, col) = self.next_loc.get_coords();
-            let dir = self.next_loc.get_dir();
-            println!(
-                "\x1b[2m\x1b[36mWARN: {} has nowhere to go (row = {row}, col = {col}, dir = {}, spawning = {spawning})\n\x1b[0m",
-                GHOST_NAMES[self.color as usize], DIR_NAMES[dir as usize]
-            );
-            return;
-        }
-
-        // If the ghost will still frightened one tick later, immediately choose
-        // a random valid direction and return
-        if frightSteps > 1 {
-            // Generate a random index out of the valid moves
-            let randomNum = rand::thread_rng().gen_range(0..numValidMoves);
-
-            // Loop over all directions
-            let mut count = 0;
-            for dir in 0..NUM_DIRS {
-                // Skip any invalid moves
-                if !moveValid[dir] {
-                    continue;
-                }
-
-                // If we have reached the correct move, update the direction and return
-                if count == randomNum {
-                    self.next_loc.dir = dir as u8;
-                    return;
-                }
-
-                // Update the count of valid moves so far
-                count += 1;
-            }
-        }
-
-        let bestDir = (0..NUM_DIRS)
-            .filter(|&dir| moveValid[dir])
-            .max_by_key(|&dir| moveDistSq[dir])
-            .unwrap() as u8;
-
-        // Once we have picked the best direction, update it
-        self.next_loc.dir = bestDir;
+        // Once we have picked a move, set next_loc.dir to that direction.
+        self.next_loc.dir = chosen_move.0;
     }
 }
