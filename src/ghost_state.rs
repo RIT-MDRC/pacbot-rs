@@ -30,8 +30,7 @@ pub struct GhostState {
 impl GhostState {
     // Create a new ghost state with given location and color values
     pub fn new(color: u8) -> Self {
-        // Ghost state object
-        let mut g = Self {
+        Self {
             loc: EMPTY_LOC,
             next_loc: GHOST_SPAWN_LOCS[color as usize],
             scatter_target: GHOST_SCATTER_TARGETS[color as usize],
@@ -40,21 +39,18 @@ impl GhostState {
             fright_steps: 0,
             spawning: true,
             eaten: false,
-        };
-
-        // Return the ghost state
-        g
+        }
     }
 
     /*************************** Ghost Frightened State ***************************/
 
     // Set the fright steps of a ghost
-    pub fn set_fright_steps(&self, steps: u8) {
+    pub fn set_fright_steps(&mut self, steps: u8) {
         self.fright_steps = steps;
     }
 
     // Decrement the fright steps of a ghost
-    pub fn dec_fright_steps(&self) {
+    pub fn dec_fright_steps(&mut self) {
         self.fright_steps -= 1;
     }
 
@@ -67,12 +63,12 @@ impl GhostState {
     /****************************** Ghost Trap State ******************************/
 
     // Set the trapped steps of a ghost
-    pub fn set_trapped_steps(&self, steps: u8) {
+    pub fn set_trapped_steps(&mut self, steps: u8) {
         self.trapped_steps = steps;
     }
 
     // Decrement the trapped steps of a ghost
-    pub fn dec_trapped_steps(&self) {
+    pub fn dec_trapped_steps(&mut self) {
         self.trapped_steps -= 1;
     }
 
@@ -85,7 +81,7 @@ impl GhostState {
     /**************************** Ghost Spawning State ****************************/
 
     // Set the ghost spawning flag
-    pub fn set_spawning(&self, spawning: bool) {
+    pub fn set_spawning(&mut self, spawning: bool) {
         self.spawning = spawning;
     }
 
@@ -97,7 +93,7 @@ impl GhostState {
     /****************************** Ghost Eaten Flag ******************************/
 
     /// Set the ghost eaten flag.
-    pub fn set_eaten(&self, eaten: bool) {
+    pub fn set_eaten(&mut self, eaten: bool) {
         self.eaten = eaten;
     }
 
