@@ -146,7 +146,7 @@ impl GameState {
         let mut ghostRespawnFlags = [false; 4];
 
         // Loop over all the ghosts
-        for (ghost, should_respawn) in self.ghosts.iter().zip(&mut ghostRespawnFlags) {
+        for (ghost, should_respawn) in self.ghosts().zip(&mut ghostRespawnFlags) {
             // Check each collision individually
             if self.pacmanLoc.collides_with(ghost.loc) {
                 // If the ghost was already eaten, skip it
@@ -166,7 +166,7 @@ impl GameState {
 
         // Loop over the ghost colors again, to decide which should respawn
         let mut num_ghosts_eaten = 0;
-        for (ghost, should_respawn) in self.ghosts.iter_mut().zip(ghostRespawnFlags) {
+        for (mut ghost, should_respawn) in self.ghosts_mut().zip(ghostRespawnFlags) {
             // If the ghost should respawn, do so and increase the score and combo
             if should_respawn {
                 // Respawn the ghost
@@ -271,7 +271,7 @@ impl GameState {
         self.ghostCombo = 0;
 
         // Loop over all the ghosts
-        for ghost in &mut self.ghosts {
+        for mut ghost in self.ghosts_mut() {
             /*
                 To frighten a ghost, set its fright steps to a specified value
                 and trap it for one step (to force the direction to reverse)
@@ -286,7 +286,7 @@ impl GameState {
     // Reverse all ghosts at once (similar to frightenAllGhosts)
     pub fn reverseAllGhosts(&mut self) {
         // Loop over all the ghosts
-        for ghost in &mut self.ghosts {
+        for mut ghost in self.ghosts_mut() {
             /*
                 To change the direction a ghost, trap it for one step
                 (to force the direction to reverse)
@@ -303,13 +303,13 @@ impl GameState {
         self.ghostCombo = 0;
 
         // Reset each of the ghosts
-        for ghost in &mut self.ghosts {
+        for mut ghost in self.ghosts_mut() {
             ghost.reset();
         }
 
         // If no lives are left, set all ghosts to stare at the player, menacingly
         if self.getLives() == 0 {
-            for ghost in &mut self.ghosts {
+            for mut ghost in self.ghosts_mut() {
                 if ghost.color != ORANGE {
                     ghost.next_loc.dir = NONE;
                 } else {
@@ -323,7 +323,7 @@ impl GameState {
     // Update all ghosts at once
     pub fn updateAllGhosts(&mut self) {
         // Loop over the individual ghosts
-        for ghost in &mut self.ghosts {
+        for mut ghost in self.ghosts_mut() {
             ghost.update();
         }
     }
@@ -331,7 +331,7 @@ impl GameState {
     // A game state function to plan all ghosts at once
     pub fn planAllGhosts(&mut self) {
         // Plan each ghost's next move concurrently
-        for ghost in &mut self.ghosts {
+        for mut ghost in self.ghosts_mut() {
             ghost.plan(self);
         }
     }
@@ -365,7 +365,8 @@ impl GameState {
         let (pivotRow, pivotCol) = self.pacmanLoc.get_ahead_coords(2);
 
         // Get the current location of the red ghost
-        let (redRow, redCol) = self.ghosts[RED as usize].loc.get_coords();
+        let red_ghost = self.ghosts[RED as usize].borrow();
+        let (redRow, redCol) = red_ghost.loc.get_coords();
 
         // Return the pair of coordinates of the calculated target
         ((2 * pivotRow - redRow), (2 * pivotCol - redCol))
@@ -381,7 +382,8 @@ impl GameState {
         let pacman_pos = self.pacmanLoc.get_coords();
 
         // Get the orange ghost's current location
-        let orange_pos = self.ghosts[ORANGE as usize].loc.get_coords();
+        let orange_ghost = self.ghosts[ORANGE as usize].borrow();
+        let orange_pos = orange_ghost.loc.get_coords();
 
         // If Pacman is far enough from the ghost, return Pacman's location
         if dist_sq(orange_pos, pacman_pos) >= 64 {
@@ -389,7 +391,7 @@ impl GameState {
         }
 
         // Otherwise, return the scatter location of orange
-        self.ghosts[ORANGE as usize].scatter_target.get_coords()
+        orange_ghost.scatter_target.get_coords()
     }
 
     // Returns the chase location of an arbitrary ghost color

@@ -1,3 +1,5 @@
+use std::cell::{Ref, RefCell, RefMut};
+
 use array_init::array_init;
 
 use crate::{game_modes::GameMode, ghost_state::GhostState, location::LocationState, variables::*};
@@ -41,7 +43,7 @@ pub struct GameState {
     pub fruitSteps: u8,
 
     /* Ghosts - 4 * 3 = 12 bytes */
-    pub ghosts: [GhostState; 4],
+    pub ghosts: [RefCell<GhostState>; 4],
 
     /// The current ghost combo.
     pub ghostCombo: u8,
@@ -83,7 +85,7 @@ impl GameState {
             fruitSteps: 0,
 
             // Ghosts
-            ghosts: array_init(|color| GhostState::new(color as u8)),
+            ghosts: array_init(|color| RefCell::new(GhostState::new(color as u8))),
             ghostCombo: 0,
 
             // Pellet count at the start
@@ -93,6 +95,18 @@ impl GameState {
             // Walls
             walls: INIT_WALLS,
         }
+    }
+
+    /**************************** Ghost Array Helpers *****************************/
+
+    /// Returns an iterator that yields references to the four ghosts.
+    pub fn ghosts(&self) -> impl Iterator<Item = Ref<GhostState>> {
+        self.ghosts.iter().map(|ref_cell| ref_cell.borrow())
+    }
+
+    /// Returns an iterator that yields mutable references to the four ghosts.
+    pub fn ghosts_mut(&self) -> impl Iterator<Item = RefMut<GhostState>> {
+        self.ghosts.iter().map(|ref_cell| ref_cell.borrow_mut())
     }
 
     /**************************** Curr Ticks Functions ****************************/
