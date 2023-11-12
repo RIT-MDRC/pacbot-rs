@@ -16,7 +16,7 @@ impl GameEngine {
     }
 
     /// Start the game engine - should be launched as a go-routine.
-    pub fn step(&self) {
+    pub fn step(&mut self) {
         if self.state.updateReady() {
             self.state.updateAllGhosts();
             self.state.tryRespawnPacman();
