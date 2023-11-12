@@ -331,7 +331,9 @@ impl GameState {
         }
 
         // Decrement the mode steps
-        self.decrement_mode_steps();
+        if self.get_num_pellets() >= ANGER_THRESHOLD1 {
+            self.decrement_mode_steps();
+        }
 
         // Decrement the level steps
         self.decrement_level_steps();
