@@ -340,3 +340,9 @@ impl GameState {
         self.decrementFruitSteps();
     }
 }
+
+impl Default for GameState {
+    fn default() -> Self {
+        Self::new()
+    }
+}

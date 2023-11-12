@@ -90,23 +90,17 @@ impl GameState {
         let numPellets = self.getNumPellets();
 
         // Spawn fruit, if applicable
-        if (numPellets == FRUIT_THRESHOLD1) && !self.fruitExists() {
-            self.setFruitSteps(FRUIT_DURATION);
-        } else if (numPellets == FRUIT_THRESHOLD2) && !self.fruitExists() {
+        if !self.fruitExists() && (numPellets == FRUIT_THRESHOLD1 || numPellets == FRUIT_THRESHOLD2)
+        {
             self.setFruitSteps(FRUIT_DURATION);
         }
 
         // Other pellet-related events
-        if numPellets == ANGER_THRESHOLD1 {
+        if numPellets == ANGER_THRESHOLD1 || numPellets == ANGER_THRESHOLD2 {
             // Ghosts get angry (speeding up)
-            self.setUpdatePeriod(1.max(self.getUpdatePeriod() - 2));
+            self.setUpdatePeriod(u8::max(1, self.getUpdatePeriod().saturating_sub(2)));
             self.mode = GameMode::CHASE;
-            self.set_mode_steps(0xff);
-        } else if numPellets == ANGER_THRESHOLD2 {
-            // Ghosts get angrier
-            self.setUpdatePeriod(1.max(self.getUpdatePeriod() - 2));
-            self.mode = GameMode::CHASE;
-            self.set_mode_steps(0xff);
+            self.set_mode_steps(GameMode::CHASE.duration());
         } else if numPellets == 0 {
             self.levelReset();
             self.incrementLevel();
@@ -127,7 +121,7 @@ impl GameState {
     // Determines if the ghost house is at a given location
     pub fn ghostSpawnAt(&self, pos: Position) -> bool {
         let (row, col) = pos;
-        ((row >= 13) && (row <= 14)) && ((col >= 11) && (col <= 15))
+        (13..=14).contains(&row) && (11..=15).contains(&col)
     }
 
     /***************************** Collision Handling *****************************/

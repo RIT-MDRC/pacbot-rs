@@ -20,7 +20,7 @@ impl GameMode {
 impl GameState {
     // Helper function to get the number of steps until the mode changes
     pub fn get_mode_steps(&self) -> u8 {
-        return self.modeSteps;
+        self.modeSteps
     }
 
     // Helper function to set the number of steps until the mode changes

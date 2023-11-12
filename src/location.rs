@@ -39,13 +39,13 @@ impl LocationState {
         }
 
         // Return if both coordinates match
-        return (self.row == loc2.row) && (self.col == loc2.col);
+        (self.row == loc2.row) && (self.col == loc2.col)
     }
 
     // Determine if a given location state matches with the empty location
     pub fn is_empty(&self) -> bool {
         // Return if both coordinates match
-        return (self.row == EMPTY_LOC.row) && (self.col == EMPTY_LOC.col);
+        (self.row == EMPTY_LOC.row) && (self.col == EMPTY_LOC.col)
     }
 
     // Return a direction corresponding to an existing location
@@ -70,16 +70,16 @@ impl LocationState {
     // Return a set of coordinates corresponding to an existing location
     pub fn get_coords(&self) -> (i8, i8) {
         // Return the pair of coordinates
-        return (self.row, self.col);
+        (self.row, self.col)
     }
 
     // Create a new set of coordinates as the neighbor of an existing location
     pub fn get_neighbor_coords(&self, dir: u8) -> (i8, i8) {
         // Add the deltas to the coordinates and return the pair
-        return (
+        (
             self.row + D_ROW[dir as usize],
             self.col + D_COL[dir as usize],
-        );
+        )
     }
 
     /*
@@ -88,10 +88,10 @@ impl LocationState {
     */
     pub fn get_ahead_coords(&self, spaces: i8) -> (i8, i8) {
         // Add the deltas to the coordinates and return the pair
-        return (
+        (
             self.row + D_ROW[self.dir as usize] * spaces,
             self.col + D_COL[self.dir as usize] * spaces,
-        );
+        )
     }
 
     /*
