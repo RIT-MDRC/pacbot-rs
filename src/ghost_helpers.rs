@@ -95,14 +95,14 @@ impl GhostState {
 
             Otherwise: pick chase or scatter targets, depending on the mode.
         */
-        let (targetRow, targetCol) = if self.spawning
+        let target_loc = if self.spawning
             && !self.loc.collides_with(GHOST_SPAWN_LOCS[RED as usize])
             && !self.next_loc.collides_with(GHOST_SPAWN_LOCS[RED as usize])
         {
             GHOST_SPAWN_LOCS[RED as usize].get_coords()
         } else {
             match game_state.mode {
-                GameMode::CHASE => game_state.getChaseTarget(self.color),
+                GameMode::CHASE => game_state.get_chase_target(self.color),
                 GameMode::SCATTER => self.scatter_target.get_coords(),
             }
         };
@@ -118,7 +118,7 @@ impl GhostState {
             // Considerations when the ghost is spawning.
             if self.spawning {
                 // Determine if the move would be within the ghost house.
-                if game_state.ghostSpawnAt(loc) {
+                if game_state.ghost_spawn_at(loc) {
                     return true;
                 }
 
@@ -130,7 +130,7 @@ impl GhostState {
             }
 
             // Otherwise, the move is valid if it does not move into a wall.
-            !game_state.wallAt(loc)
+            !game_state.wall_at(loc)
         });
 
         let chosen_move = if self.fright_steps > 1 {
@@ -139,7 +139,7 @@ impl GhostState {
             valid_moves.choose(&mut rand::thread_rng())
         } else {
             // Otherwise, pick the move that takes the ghost closest to its target.
-            valid_moves.max_by_key(|&(_dir, loc)| dist_sq(loc, (targetRow, targetCol)))
+            valid_moves.max_by_key(|&(_dir, loc)| dist_sq(loc, target_loc))
         }
         .expect("ghost has no valid moves!");
 

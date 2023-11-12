@@ -17,14 +17,14 @@ impl GameEngine {
 
     /// Start the game engine - should be launched as a go-routine.
     pub fn step(&mut self) {
-        if self.state.updateReady() {
-            self.state.updateAllGhosts();
-            self.state.tryRespawnPacman();
-            self.state.checkCollisions();
-            self.state.handleStepEvents();
+        if self.state.update_ready() {
+            self.state.update_all_ghosts();
+            self.state.try_respawn_pacman();
+            self.state.check_collisions();
+            self.state.handle_step_events();
         }
-        if self.state.updateReady() {
-            self.state.planAllGhosts();
+        if self.state.update_ready() {
+            self.state.plan_all_ghosts();
         }
     }
 }
