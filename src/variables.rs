@@ -1,5 +1,5 @@
 use crate::{
-    game_modes::SCATTER,
+    game_modes::GameMode,
     location::{LocationState, DOWN, LEFT, NONE, RIGHT, UP},
 };
 
@@ -19,14 +19,7 @@ pub const LEVEL_DURATION: u16 = 960; // 8 minutes at 24 fps, update period = 12
 pub const LEVEL_PENALTY_DURATION: u16 = 240; // 2 min (24fps, update period = 12)
 
 /// The mode that the game starts on by default
-pub const INIT_MODE: u8 = SCATTER;
-
-/// The lengths of the game modes, in units of steps (update periods)
-pub const MODE_DURATIONS: [u8; 3] = [
-    255, // paused
-    60,  // scatter - 30 seconds at 24 fps
-    180, // chase   - 90 seconds at 24 fps
-];
+pub const INIT_MODE: GameMode = GameMode::SCATTER;
 
 /// The level that Pacman starts on by default
 pub const INIT_LEVEL: u8 = 1;

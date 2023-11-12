@@ -111,3 +111,15 @@ impl LocationState {
         (self.row, self.col) = coords;
     }
 }
+
+// Returns the squared Euclidean distance between two points.
+pub fn distSq(p1: (i8, i8), p2: (i8, i8)) -> u32 {
+    let row1: i32 = p1.0.into();
+    let col1: i32 = p1.1.into();
+    let row2: i32 = p2.0.into();
+    let col2: i32 = p2.1.into();
+
+    let dx = row2 - row1;
+    let dy = col2 - col1;
+    (dx * dx + dy * dy) as u32
+}

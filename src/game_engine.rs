@@ -20,10 +20,6 @@ impl GameEngine {
         if self.state.updateReady() {
             self.state.updateAllGhosts();
             self.state.tryRespawnPacman();
-            if self.state.pauseOnUpdate {
-                self.state.pause();
-                self.state.set_pause_on_update(false);
-            }
             self.state.checkCollisions();
             self.state.handleStepEvents();
         }

@@ -1,11 +1,6 @@
 use array_init::array_init;
 
-use crate::{
-    game_modes::{CHASE, PAUSED, SCATTER},
-    ghost_state::GhostState,
-    location::LocationState,
-    variables::*,
-};
+use crate::{game_modes::GameMode, ghost_state::GhostState, location::LocationState, variables::*};
 
 /// A game state object, to hold the internal game state and provide
 /// helper methods that can be accessed by the game engine.
@@ -17,12 +12,8 @@ pub struct GameState {
     /// Ticks / update.
     pub updatePeriod: u8,
 
-    /// Last unpaused mode (for pausing purposes).
-    pub lastUnpausedMode: u8,
     /// Game mode.
-    pub mode: u8,
-    /// Should pause when an update is ready.
-    pub pauseOnUpdate: bool,
+    pub mode: GameMode,
 
     /// The number of steps (update periods) before the mode changes.
     pub modeSteps: u8,
@@ -74,12 +65,10 @@ impl GameState {
             // Message header
             currTicks: 0,
             updatePeriod: INIT_UPDATE_PERIOD,
-            mode: PAUSED,
+            mode: INIT_MODE,
 
             // Additional header-related info
-            lastUnpausedMode: INIT_MODE,
-            pauseOnUpdate: false,
-            modeSteps: MODE_DURATIONS[INIT_MODE as usize],
+            modeSteps: INIT_MODE.duration(),
             levelSteps: LEVEL_DURATION,
 
             // Game info
@@ -296,38 +285,18 @@ impl GameState {
 
     /// Helper function to handle step-related events, if the mode steps hit 0
     pub fn handleStepEvents(&self) {
-        // Get the current mode steps
-        let modeSteps = self.get_mode_steps();
-
-        // Get the current level steps
-        let levelSteps = self.getLevelSteps();
-
         // If the mode steps are 0, change the mode
-        if modeSteps == 0 {
-            match self.get_mode() {
+        if self.modeSteps == 0 {
+            match self.mode {
                 // CHASE -> SCATTER
-                CHASE => {
-                    self.set_mode(SCATTER);
-                    self.set_mode_steps(MODE_DURATIONS[SCATTER as usize]);
+                GameMode::CHASE => {
+                    self.mode = GameMode::SCATTER;
+                    self.set_mode_steps(GameMode::SCATTER.duration());
                 }
                 // SCATTER -> CHASE
-                SCATTER => {
-                    self.set_mode(CHASE);
-                    self.set_mode_steps(MODE_DURATIONS[CHASE as usize]);
-                }
-                PAUSED => {
-                    match self.get_last_unpaused_mode() {
-                        // CHASE -> SCATTER
-                        CHASE => {
-                            self.set_last_unpaused_mode(SCATTER);
-                            self.set_mode_steps(MODE_DURATIONS[SCATTER as usize]);
-                        }
-                        // SCATTER -> CHASE
-                        SCATTER => {
-                            self.set_last_unpaused_mode(CHASE);
-                            self.set_mode_steps(MODE_DURATIONS[CHASE as usize]);
-                        }
-                    }
+                GameMode::SCATTER => {
+                    self.mode = GameMode::CHASE;
+                    self.set_mode_steps(GameMode::CHASE.duration());
                 }
             }
 
@@ -336,7 +305,7 @@ impl GameState {
         }
 
         // If the level steps are 0, add a penalty by speeding up the game
-        if levelSteps == 0 {
+        if self.levelSteps == 0 {
             // Log the change to the terminal
             println!("\x1b[31mGAME: Long-game penalty applied\x1b[0m");
 

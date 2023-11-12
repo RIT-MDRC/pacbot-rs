@@ -1,9 +1,10 @@
 use rand::Rng;
 
 use crate::{
-    game_modes::{CHASE, SCATTER},
+    game_modes::GameMode,
+    game_state::GameState,
     ghost_state::{GhostState, GHOST_NAMES, PINK, RED},
-    location::{DIR_NAMES, DOWN, NUM_DIRS, UP},
+    location::{distSq, DIR_NAMES, DOWN, NUM_DIRS, UP},
     variables::{
         EMPTY_LOC, GHOST_HOUSE_EXIT_COL, GHOST_HOUSE_EXIT_ROW, GHOST_SPAWN_LOCS,
         GHOST_TRAPPED_STEPS,
@@ -17,7 +18,7 @@ impl GhostState {
     pub fn reset(&self) {
         // Set the ghost to be trapped, spawning, and not frightened
         self.set_spawning(true);
-        self.set_trapped_steps(GHOST_TRAPPED_STEPS[self.color]);
+        self.set_trapped_steps(GHOST_TRAPPED_STEPS[self.color as usize]);
         self.set_fright_steps(0);
 
         // Set the current ghost to be at an empty location
@@ -103,9 +104,6 @@ impl GhostState {
         let frightSteps = self.get_fright_steps();
         let spawning = self.is_spawning();
 
-        // Capture the last unpaused current game mode (could be the current mode)
-        let mode = self.game.getLastUnpausedMode();
-
         // Decide on a target for this ghost, depending on the game mode.
         /*
             If the ghost is spawning in the ghost house, choose red's spawn
@@ -119,10 +117,9 @@ impl GhostState {
         {
             GHOST_SPAWN_LOCS[RED as usize].get_coords()
         } else {
-            match mode {
-                CHASE => self.game.getChaseTarget(self.color),
-                SCATTER => self.scatter_target.get_coords(),
-                _ => unreachable!(),
+            match game_state.mode {
+                GameMode::CHASE => game_state.getChaseTarget(self.color),
+                GameMode::SCATTER => self.scatter_target.get_coords(),
             }
         };
 
@@ -138,15 +135,15 @@ impl GhostState {
             let (row, col) = self.next_loc.get_neighbor_coords(dir as u8);
 
             // Calculate the distance from the target to the move location
-            moveDistSq[dir] = self.game.distSq(row, col, targetRow, targetCol);
+            moveDistSq[dir] = distSq((row, col), (targetRow, targetCol));
 
             // Determine if that move is valid
-            moveValid[dir] = !self.game.wallAt(row, col);
+            moveValid[dir] = !game_state.wallAt((row, col));
 
             // Considerations when the ghost is spawning
             if spawning {
                 // Determine if the move would be within the ghost house
-                if self.game.ghostSpawnAt(row, col) {
+                if game_state.ghostSpawnAt((row, col)) {
                     moveValid[dir] = true;
                 }
 
