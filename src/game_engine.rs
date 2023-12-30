@@ -5,6 +5,7 @@ use crate::game_state::GameState;
 /// clients and routinely send serialized copies of the game state to them.
 pub struct GameEngine {
     state: GameState,
+    paused: bool,
 }
 
 impl GameEngine {
@@ -12,6 +13,7 @@ impl GameEngine {
     pub fn new() -> Self {
         Self {
             state: GameState::new(),
+            paused: false,
         }
     }
 
@@ -26,6 +28,26 @@ impl GameEngine {
         if self.state.update_ready() {
             self.state.plan_all_ghosts();
         }
+    }
+
+    /// Pause the game engine
+    pub fn pause(&mut self) {
+        self.paused = true;
+    }
+
+    /// Unpause the game engine
+    pub fn unpause(&mut self) {
+        self.paused = false;
+    }
+
+    /// Get the current game state
+    pub fn get_state(&self) -> &GameState {
+        &self.state
+    }
+
+    /// Get whether the game is paused
+    pub fn is_paused(&self) -> bool {
+        self.paused
     }
 }
 
