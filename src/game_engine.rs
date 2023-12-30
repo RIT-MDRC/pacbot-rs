@@ -1,8 +1,10 @@
+use serde::{Deserialize, Serialize};
 use crate::game_state::GameState;
 
 /// A game engine object, to act as an intermediary between the web broker
 /// and the internal game state - its responsibility is to read responses from
 /// clients and routinely send serialized copies of the game state to them.
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GameEngine {
     state: GameState,
     paused: bool,
