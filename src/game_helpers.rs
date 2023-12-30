@@ -33,13 +33,13 @@ impl GameState {
     /**************************** Positional Functions ****************************/
 
     // Determines if a position is within the bounds of the maze
-    fn in_bounds(&self, pos: Position) -> bool {
+    pub fn in_bounds(&self, pos: Position) -> bool {
         let (row, col) = pos;
         (row >= 0 && row < MAZE_ROWS as i8) && (col >= 0 && col < MAZE_COLS as i8)
     }
 
     // Determines if a pellet is at a given location
-    fn pellet_at(&self, pos: Position) -> bool {
+    pub fn pellet_at(&self, pos: Position) -> bool {
         let (row, col) = pos;
         if !self.in_bounds(pos) {
             return false;
