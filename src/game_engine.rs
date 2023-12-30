@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use crate::game_state::GameState;
+use crate::location::LocationState;
 
 /// A game engine object, to act as an intermediary between the web broker
 /// and the internal game state - its responsibility is to read responses from
@@ -50,6 +51,11 @@ impl GameEngine {
     /// Get whether the game is paused
     pub fn is_paused(&self) -> bool {
         self.paused
+    }
+
+    /// Set pacman's location
+    pub fn set_pacman_location(&mut self, location: LocationState) {
+        self.state.pacman_loc = location;
     }
 }
 
