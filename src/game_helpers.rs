@@ -132,7 +132,8 @@ impl GameState {
         // Loop over all the ghosts and check for collisions with Pacman.
         let mut num_ghosts_eaten = 0;
         let mut did_pacman_die = false;
-        for mut ghost in self.ghosts_mut() {
+        for ghost in self.ghosts_mut() {
+            let mut ghost = ghost.lock().unwrap();
             if self.pacman_loc.collides_with(ghost.loc) {
                 // If the ghost was already eaten, skip it.
                 if ghost.is_eaten() {
@@ -252,7 +253,8 @@ impl GameState {
         self.ghost_combo = 0;
 
         // Loop over all the ghosts
-        for mut ghost in self.ghosts_mut() {
+        for ghost in self.ghosts_mut() {
+            let mut ghost = ghost.lock().unwrap();
             /*
                 To frighten a ghost, set its fright steps to a specified value
                 and trap it for one step (to force the direction to reverse)
@@ -267,7 +269,8 @@ impl GameState {
     // Reverse all ghosts at once (similar to frightenAllGhosts)
     pub fn reverse_all_ghosts(&mut self) {
         // Loop over all the ghosts
-        for mut ghost in self.ghosts_mut() {
+        for ghost in self.ghosts_mut() {
+            let mut ghost = ghost.lock().unwrap();
             /*
                 To change the direction a ghost, trap it for one step
                 (to force the direction to reverse)
@@ -284,13 +287,15 @@ impl GameState {
         self.ghost_combo = 0;
 
         // Reset each of the ghosts
-        for mut ghost in self.ghosts_mut() {
+        for ghost in self.ghosts_mut() {
+            let mut ghost = ghost.lock().unwrap();
             ghost.reset();
         }
 
         // If no lives are left, set all ghosts to stare at the player, menacingly
         if self.get_lives() == 0 {
-            for mut ghost in self.ghosts_mut() {
+            for ghost in self.ghosts_mut() {
+                let mut ghost = ghost.lock().unwrap();
                 if ghost.color != ORANGE {
                     ghost.next_loc.dir = NONE;
                 } else {
@@ -304,7 +309,8 @@ impl GameState {
     // Update all ghosts at once
     pub fn update_all_ghosts(&mut self) {
         // Loop over the individual ghosts
-        for mut ghost in self.ghosts_mut() {
+        for ghost in self.ghosts_mut() {
+            let mut ghost = ghost.lock().unwrap();
             ghost.update();
         }
     }
@@ -312,7 +318,8 @@ impl GameState {
     // A game state function to plan all ghosts at once
     pub fn plan_all_ghosts(&mut self) {
         // Plan each ghost's next move concurrently
-        for mut ghost in self.ghosts_mut() {
+        for ghost in self.ghosts_mut() {
+            let mut ghost = ghost.lock().unwrap();
             ghost.plan(self);
         }
     }
@@ -346,8 +353,7 @@ impl GameState {
         let (pivot_row, pivot_col) = self.pacman_loc.get_ahead_coords(2);
 
         // Get the current location of the red ghost
-        let red_ghost = self.ghosts[RED as usize].borrow();
-        let (red_row, red_col) = red_ghost.loc.get_coords();
+        let (red_row, red_col) = self.ghosts[RED as usize].lock().unwrap().loc.get_coords();
 
         // Return the pair of coordinates of the calculated target
         ((2 * pivot_row - red_row), (2 * pivot_col - red_col))
@@ -363,8 +369,7 @@ impl GameState {
         let pacman_pos = self.pacman_loc.get_coords();
 
         // Get the orange ghost's current location
-        let orange_ghost = self.ghosts[ORANGE as usize].borrow();
-        let orange_pos = orange_ghost.loc.get_coords();
+        let orange_pos = self.ghosts[ORANGE as usize].lock().unwrap().loc.get_coords();
 
         // If Pacman is far enough from the ghost, return Pacman's location
         if dist_sq(orange_pos, pacman_pos) >= 64 {
@@ -372,7 +377,7 @@ impl GameState {
         }
 
         // Otherwise, return the scatter location of orange
-        orange_ghost.scatter_target.get_coords()
+        self.ghosts[ORANGE as usize].lock().unwrap().scatter_target.get_coords()
     }
 
     // Returns the chase location of an arbitrary ghost color
