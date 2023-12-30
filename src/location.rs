@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use crate::variables::EMPTY_LOC;
 
 /// Directions:              U   L  D  R  None
@@ -17,7 +18,7 @@ pub const NONE: u8 = 4;
 pub const DIR_NAMES: [&str; NUM_DIRS + 1] = ["up", "left", "down", "right", "none"];
 
 /// An object to keep track of the position and direction of an agent.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct LocationState {
     pub row: i8, // Row
     pub col: i8, // Col

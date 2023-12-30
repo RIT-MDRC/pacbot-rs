@@ -1,11 +1,13 @@
 use std::cell::{Ref, RefCell, RefMut};
 
 use array_init::array_init;
+use serde::{Deserialize, Serialize};
 
 use crate::{game_modes::GameMode, ghost_state::GhostState, location::LocationState, variables::*};
 
 /// A game state object, to hold the internal game state and provide
 /// helper methods that can be accessed by the game engine.
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GameState {
     /* Message header - 4 bytes */
     /// Current ticks.

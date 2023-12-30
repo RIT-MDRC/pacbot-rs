@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use crate::{
     location::LocationState,
     variables::{EMPTY_LOC, GHOST_SCATTER_TARGETS, GHOST_SPAWN_LOCS, GHOST_TRAPPED_STEPS},
@@ -16,6 +17,7 @@ pub const GHOST_NAMES: [&str; NUM_COLORS as usize] = ["red", "pink", "cyan", "or
 /*
 An object to keep track of the location and attributes of a ghost
 */
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GhostState {
     pub loc: LocationState,            // Current location
     pub next_loc: LocationState,       // Planned location (for next update)
