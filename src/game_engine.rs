@@ -16,7 +16,7 @@ impl GameEngine {
     pub fn new() -> Self {
         Self {
             state: GameState::new(),
-            paused: false,
+            paused: true,
         }
     }
 
