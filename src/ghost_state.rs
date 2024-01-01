@@ -1,4 +1,3 @@
-use std::sync::{Arc, Mutex};
 use serde::{Deserialize, Serialize};
 use crate::{
     location::LocationState,
@@ -18,7 +17,7 @@ pub const GHOST_NAMES: [&str; NUM_COLORS as usize] = ["red", "pink", "cyan", "or
 /*
 An object to keep track of the location and attributes of a ghost
 */
-#[derive(Clone, Debug, Serialize, Deserialize, PartialOrd, PartialEq, Ord, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct GhostState {
     pub loc: LocationState,            // Current location
     pub next_loc: LocationState,       // Planned location (for next update)
@@ -29,31 +28,6 @@ pub struct GhostState {
     pub spawning: bool, // Flag set when spawning
     pub eaten: bool,    // Flag set when eaten and returning to ghost house
 }
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ArcMutexGhost {
-    pub ghost: Arc<Mutex<GhostState>>,
-}
-
-impl PartialOrd for ArcMutexGhost {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.ghost.lock().unwrap().loc.partial_cmp(&other.ghost.lock().unwrap().loc)
-    }
-}
-
-impl PartialEq for ArcMutexGhost {
-    fn eq(&self, other: &Self) -> bool {
-        self.ghost.lock().unwrap().loc == other.ghost.lock().unwrap().loc
-    }
-}
-
-impl Ord for ArcMutexGhost {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.ghost.lock().unwrap().loc.cmp(&other.ghost.lock().unwrap().loc)
-    }
-}
-
-impl Eq for ArcMutexGhost {}
 
 impl GhostState {
     // Create a new ghost state with given location and color values
