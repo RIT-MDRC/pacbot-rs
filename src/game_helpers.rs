@@ -133,7 +133,7 @@ impl GameState {
         let mut num_ghosts_eaten = 0;
         let mut did_pacman_die = false;
         for ghost in self.ghosts_mut() {
-            let mut ghost = ghost.lock().unwrap();
+            let mut ghost = ghost.write().unwrap();
             if self.pacman_loc.collides_with(ghost.loc) {
                 // If the ghost was already eaten, skip it.
                 if ghost.is_eaten() {
@@ -254,7 +254,7 @@ impl GameState {
 
         // Loop over all the ghosts
         for ghost in self.ghosts_mut() {
-            let mut ghost = ghost.lock().unwrap();
+            let mut ghost = ghost.write().unwrap();
             /*
                 To frighten a ghost, set its fright steps to a specified value
                 and trap it for one step (to force the direction to reverse)
@@ -270,7 +270,7 @@ impl GameState {
     pub fn reverse_all_ghosts(&mut self) {
         // Loop over all the ghosts
         for ghost in self.ghosts_mut() {
-            let mut ghost = ghost.lock().unwrap();
+            let mut ghost = ghost.write().unwrap();
             /*
                 To change the direction a ghost, trap it for one step
                 (to force the direction to reverse)
@@ -288,14 +288,14 @@ impl GameState {
 
         // Reset each of the ghosts
         for ghost in self.ghosts_mut() {
-            let mut ghost = ghost.lock().unwrap();
+            let mut ghost = ghost.write().unwrap();
             ghost.reset();
         }
 
         // If no lives are left, set all ghosts to stare at the player, menacingly
         if self.get_lives() == 0 {
             for ghost in self.ghosts_mut() {
-                let mut ghost = ghost.lock().unwrap();
+                let mut ghost = ghost.write().unwrap();
                 if ghost.color != ORANGE {
                     ghost.next_loc.dir = NONE;
                 } else {
@@ -310,7 +310,7 @@ impl GameState {
     pub fn update_all_ghosts(&mut self) {
         // Loop over the individual ghosts
         for ghost in self.ghosts_mut() {
-            let mut ghost = ghost.lock().unwrap();
+            let mut ghost = ghost.write().unwrap();
             ghost.update();
         }
     }
@@ -319,7 +319,7 @@ impl GameState {
     pub fn plan_all_ghosts(&mut self) {
         // Plan each ghost's next move concurrently
         for ghost in self.ghosts_mut() {
-            let mut ghost = ghost.lock().unwrap();
+            let mut ghost = ghost.write().unwrap();
             ghost.plan(self);
         }
     }
@@ -353,7 +353,7 @@ impl GameState {
         let (pivot_row, pivot_col) = self.pacman_loc.get_ahead_coords(2);
 
         // Get the current location of the red ghost
-        let (red_row, red_col) = self.ghosts[RED as usize].lock().unwrap().loc.get_coords();
+        let (red_row, red_col) = self.ghosts[RED as usize].read().unwrap().loc.get_coords();
 
         // Return the pair of coordinates of the calculated target
         ((2 * pivot_row - red_row), (2 * pivot_col - red_col))
@@ -369,7 +369,7 @@ impl GameState {
         let pacman_pos = self.pacman_loc.get_coords();
 
         // Get the orange ghost's current location
-        let orange_pos = self.ghosts[ORANGE as usize].lock().unwrap().loc.get_coords();
+        let orange_pos = self.ghosts[ORANGE as usize].read().unwrap().loc.get_coords();
 
         // If Pacman is far enough from the ghost, return Pacman's location
         if dist_sq(orange_pos, pacman_pos) >= 64 {
@@ -377,7 +377,7 @@ impl GameState {
         }
 
         // Otherwise, return the scatter location of orange
-        self.ghosts[ORANGE as usize].lock().unwrap().scatter_target.get_coords()
+        self.ghosts[ORANGE as usize].read().unwrap().scatter_target.get_coords()
     }
 
     // Returns the chase location of an arbitrary ghost color

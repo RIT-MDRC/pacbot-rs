@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 use array_init::array_init;
 use serde::{Deserialize, Serialize};
@@ -45,7 +45,7 @@ pub struct GameState {
     pub fruit_steps: u8,
 
     /* Ghosts - 4 * 3 = 12 bytes */
-    pub ghosts: [Arc<Mutex<GhostState>>; 4],
+    pub ghosts: [Arc<RwLock<GhostState>>; 4],
 
     /// The current ghost combo.
     pub ghost_combo: u8,
@@ -87,7 +87,7 @@ impl GameState {
             fruit_steps: 0,
 
             // Ghosts
-            ghosts: array_init(|color| Arc::new(Mutex::new(GhostState::new(color as u8)))),
+            ghosts: array_init(|color| Arc::new(RwLock::new(GhostState::new(color as u8)))),
             ghost_combo: 0,
 
             // Pellet count at the start
@@ -102,7 +102,7 @@ impl GameState {
     /**************************** Ghost Array Helpers *****************************/
 
     /// Returns an iterator that yields mutable references to the four ghosts.
-    pub fn ghosts_mut(&self) -> impl Iterator<Item = Arc<Mutex<GhostState>>> + '_ {
+    pub fn ghosts_mut(&self) -> impl Iterator<Item = Arc<RwLock<GhostState>>> + '_ {
         self.ghosts.iter().map(|a| a.clone())
     }
 
