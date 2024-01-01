@@ -353,7 +353,7 @@ impl GameState {
         let (pivot_row, pivot_col) = self.pacman_loc.get_ahead_coords(2);
 
         // Get the current location of the red ghost
-        let (red_row, red_col) = self.ghosts[RED as usize].lock().unwrap().loc.get_coords();
+        let (red_row, red_col) = self.ghosts[RED as usize].ghost.lock().unwrap().loc.get_coords();
 
         // Return the pair of coordinates of the calculated target
         ((2 * pivot_row - red_row), (2 * pivot_col - red_col))
@@ -369,7 +369,7 @@ impl GameState {
         let pacman_pos = self.pacman_loc.get_coords();
 
         // Get the orange ghost's current location
-        let orange_pos = self.ghosts[ORANGE as usize].lock().unwrap().loc.get_coords();
+        let orange_pos = self.ghosts[ORANGE as usize].ghost.lock().unwrap().loc.get_coords();
 
         // If Pacman is far enough from the ghost, return Pacman's location
         if dist_sq(orange_pos, pacman_pos) >= 64 {
@@ -377,7 +377,7 @@ impl GameState {
         }
 
         // Otherwise, return the scatter location of orange
-        self.ghosts[ORANGE as usize].lock().unwrap().scatter_target.get_coords()
+        self.ghosts[ORANGE as usize].ghost.lock().unwrap().scatter_target.get_coords()
     }
 
     // Returns the chase location of an arbitrary ghost color

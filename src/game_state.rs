@@ -4,10 +4,11 @@ use array_init::array_init;
 use serde::{Deserialize, Serialize};
 
 use crate::{game_modes::GameMode, ghost_state::GhostState, location::LocationState, variables::*};
+use crate::ghost_state::ArcMutexGhost;
 
 /// A game state object, to hold the internal game state and provide
 /// helper methods that can be accessed by the game engine.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialOrd, PartialEq, Ord, Eq)]
 pub struct GameState {
     /* Message header - 4 bytes */
     /// Current ticks.
@@ -45,7 +46,7 @@ pub struct GameState {
     pub fruit_steps: u8,
 
     /* Ghosts - 4 * 3 = 12 bytes */
-    pub ghosts: [Arc<Mutex<GhostState>>; 4],
+    pub ghosts: [ArcMutexGhost; 4],
 
     /// The current ghost combo.
     pub ghost_combo: u8,
@@ -87,7 +88,7 @@ impl GameState {
             fruit_steps: 0,
 
             // Ghosts
-            ghosts: array_init(|color| Arc::new(Mutex::new(GhostState::new(color as u8)))),
+            ghosts: array_init(|color| ArcMutexGhost {ghost: Arc::new(Mutex::new(GhostState::new(color as u8)))}),
             ghost_combo: 0,
 
             // Pellet count at the start
@@ -103,7 +104,7 @@ impl GameState {
 
     /// Returns an iterator that yields mutable references to the four ghosts.
     pub fn ghosts_mut(&self) -> impl Iterator<Item = Arc<Mutex<GhostState>>> + '_ {
-        self.ghosts.iter().map(|a| a.clone())
+        self.ghosts.iter().map(|a| a.ghost.clone())
     }
 
     /**************************** Curr Ticks Functions ****************************/
