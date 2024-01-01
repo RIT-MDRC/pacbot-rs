@@ -139,7 +139,7 @@ impl GhostState {
             valid_moves.choose(&mut rand::thread_rng())
         } else {
             // Otherwise, pick the move that takes the ghost closest to its target.
-            valid_moves.max_by_key(|&(_dir, loc)| dist_sq(loc, target_loc))
+            valid_moves.min_by_key(|&(_dir, loc)| dist_sq(loc, target_loc))
         }
         .expect("ghost has no valid moves!");
 
