@@ -2,6 +2,7 @@ type Position = (i8, i8);
 
 /***************************** Bitwise Operations *****************************/
 
+use rand::prelude::IteratorRandom;
 use crate::{
     game_modes::GameMode, game_state::GameState, ghost_state::*, location::*, variables::*,
 };
@@ -319,8 +320,82 @@ impl GameState {
     pub fn plan_all_ghosts(&mut self) {
         // Plan each ghost's next move concurrently
         for ghost in self.ghosts_mut() {
+            let chase_color = ghost.read().unwrap().color;
+            let chase_target = self.get_chase_target(chase_color);
             let mut ghost = ghost.write().unwrap();
-            ghost.plan(self);
+
+            // If the location is empty (i.e. after a reset/respawn), don't plan
+            if ghost.loc.is_empty() {
+                return;
+            }
+
+            // Determine the next position based on the current direction
+            ghost.next_loc.advance_from(ghost.loc);
+
+            // If the ghost is trapped, reverse the current direction and return
+            if self.is_trapped() {
+                ghost.next_loc.dir = ghost.next_loc.get_reversed_dir();
+                self.dec_trapped_steps();
+                return;
+            }
+
+            // Decide on a target for this ghost, depending on the game mode.
+            /*
+                If the ghost is spawning in the ghost house, choose red's spawn
+                location as the target to encourage it to leave the ghost house.
+
+                Otherwise: pick chase or scatter targets, depending on the mode.
+            */
+            let target_loc = if ghost.spawning
+                && !ghost.loc.collides_with(GHOST_SPAWN_LOCS[RED as usize])
+                && !ghost.next_loc.collides_with(GHOST_SPAWN_LOCS[RED as usize])
+            {
+                GHOST_SPAWN_LOCS[RED as usize].get_coords()
+            } else {
+                match self.mode {
+                    GameMode::CHASE => chase_target,
+                    GameMode::SCATTER => ghost.scatter_target.get_coords(),
+                }
+            };
+
+            // Determine which of the four neighboring moves to the next location are valid.
+            let moves = (0..NUM_DIRS as u8).map(|dir| (dir, ghost.next_loc.get_neighbor_coords(dir)));
+            let valid_moves = moves.filter(|&(dir, loc)| {
+                // If this move would make the ghost reverse, skip it.
+                if dir == ghost.next_loc.get_reversed_dir() {
+                    return false;
+                }
+
+                // Considerations when the ghost is spawning.
+                if ghost.spawning {
+                    // Determine if the move would be within the ghost house.
+                    if self.ghost_spawn_at(loc) {
+                        return true;
+                    }
+
+                    // Determine if the move would help the ghost escape the ghost house,
+                    // and make it a valid one if so.
+                    if loc == GHOST_HOUSE_EXIT_POS {
+                        return true;
+                    }
+                }
+
+                // Otherwise, the move is valid if it does not move into a wall.
+                !self.wall_at(loc)
+            });
+
+            let chosen_move = if ghost.fright_steps > 1 {
+                // If the ghost will still be frightened one tick later, immediately choose
+                // a random valid direction and return.
+                valid_moves.choose(&mut rand::thread_rng())
+            } else {
+                // Otherwise, pick the move that takes the ghost closest to its target.
+                valid_moves.min_by_key(|&(_dir, loc)| dist_sq(loc, target_loc))
+            }
+                .expect("ghost has no valid moves!");
+
+            // Once we have picked a move, set next_loc.dir to that direction.
+            ghost.next_loc.dir = chosen_move.0;
         }
     }
 
