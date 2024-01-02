@@ -22,6 +22,7 @@ impl GameEngine {
 
     /// Start the game engine - should be launched as a go-routine.
     pub fn step(&mut self) {
+        let lives_before = self.state.curr_lives;
         if self.state.update_ready() {
             self.state.update_all_ghosts();
             self.state.try_respawn_pacman();
@@ -30,6 +31,9 @@ impl GameEngine {
         }
         if self.state.update_ready() {
             self.state.plan_all_ghosts();
+        }
+        if self.state.curr_lives < lives_before {
+            self.pause();
         }
     }
 
