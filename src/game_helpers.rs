@@ -54,7 +54,7 @@ impl GameState {
     Collects a pellet if it is at a given location
     Returns the number of pellets that are left
     */
-    fn collect_pellet(&mut self, pos: Position) {
+    pub fn collect_pellet(&mut self, pos: Position) {
         let (row, col) = pos;
 
         // Collect fruit, if applicable

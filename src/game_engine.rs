@@ -60,6 +60,7 @@ impl GameEngine {
     /// Set pacman's location
     pub fn set_pacman_location(&mut self, location: LocationState) {
         self.state.pacman_loc = location;
+        self.state.collect_pellet((location.row, location.col));
     }
 }
 
