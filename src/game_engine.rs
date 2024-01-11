@@ -31,7 +31,24 @@ impl GameEngine {
         }
         if self.state.update_ready() {
             self.state.plan_all_ghosts();
+            self.state.next_tick();
         }
+        if self.state.curr_lives < lives_before {
+            self.pause();
+        }
+    }
+
+    /// Forcibly step ghosts
+    pub fn force_step(&mut self) {
+        let lives_before = self.state.curr_lives;
+
+        self.state.update_all_ghosts();
+        self.state.try_respawn_pacman();
+        self.state.check_collisions();
+        self.state.handle_step_events();
+        self.state.plan_all_ghosts();
+        self.state.next_tick();
+
         if self.state.curr_lives < lives_before {
             self.pause();
         }
@@ -60,7 +77,9 @@ impl GameEngine {
     /// Set pacman's location
     pub fn set_pacman_location(&mut self, location: LocationState) {
         self.state.pacman_loc = location;
-        self.state.collect_pellet((location.row, location.col));
+        if !self.paused {
+            self.state.collect_pellet((location.row, location.col));
+        }
     }
 }
 
