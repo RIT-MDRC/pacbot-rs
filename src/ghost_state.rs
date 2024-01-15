@@ -44,6 +44,12 @@ impl GhostState {
         }
     }
 
+    // Update auxiliary info (fright steps and spawning flag, 1 byte)
+    pub fn update_aux(&mut self, aux_info: u8) {
+        self.fright_steps = aux_info & 0x3f;
+        self.spawning = (aux_info >> 7) != 0;
+    }
+
     /*************************** Ghost Frightened State ***************************/
 
     // Set the fright steps of a ghost

@@ -1,4 +1,6 @@
+use std::io::Cursor;
 use std::sync::{Arc, RwLock};
+use byteorder::{BigEndian, ReadBytesExt};
 
 use array_init::array_init;
 use serde::{Deserialize, Serialize};
@@ -97,6 +99,48 @@ impl GameState {
             // Walls
             walls: INIT_WALLS,
         }
+    }
+
+    pub fn update(&mut self, bytes: &[u8]) -> bool {
+        let mut cursor = Cursor::new(bytes);
+
+        // General game info
+        self.curr_ticks = cursor.read_u16::<BigEndian>().unwrap() as u32;
+        self.update_period = cursor.read_u8().unwrap();
+        let (mode, paused) = match cursor.read_u8().unwrap() {
+            0 => (GameMode::CHASE, true),
+            1 => (GameMode::SCATTER, false),
+            2 => (GameMode::CHASE, false),
+            _ => unreachable!()
+        };
+        self.mode = mode;
+        self.mode_steps = cursor.read_u8().unwrap();
+        let _mode_duration = cursor.read_u8().unwrap();
+        self.curr_score = cursor.read_u16::<BigEndian>().unwrap();
+        self.curr_level = cursor.read_u8().unwrap();
+        self.curr_lives = cursor.read_u8().unwrap();
+
+        // red ghost info
+        for g in 0..4 {
+            let mut ghost = self.ghosts[g].write().unwrap();
+            ghost.loc.update(cursor.read_u16::<BigEndian>().unwrap());
+            ghost.update_aux(cursor.read_u8().unwrap());
+        }
+
+        // pacman location info
+        self.pacman_loc.update(cursor.read_u16::<BigEndian>().unwrap());
+
+        // fruit location info
+        self.fruit_loc.update(cursor.read_u16::<BigEndian>().unwrap());
+        self.fruit_steps = cursor.read_u8().unwrap();
+        let _fruit_duration = cursor.read_u8().unwrap();
+
+        // Pellet info
+        for i in 0..31 {
+            self.pellets[i] = cursor.read_u32::<BigEndian>().unwrap();
+        }
+
+        paused
     }
 
     /**************************** Ghost Array Helpers *****************************/

@@ -38,6 +38,11 @@ impl GameEngine {
         }
     }
 
+    /// Update with bytes from server
+    pub fn update(&mut self, bytes: &[u8]) {
+        self.paused = self.state.update(bytes)
+    }
+
     /// Forcibly step ghosts
     pub fn force_step(&mut self) {
         let lives_before = self.state.curr_lives;

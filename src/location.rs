@@ -111,6 +111,32 @@ impl LocationState {
     pub fn update_coords(&mut self, coords: (i8, i8)) {
         (self.row, self.col) = coords;
     }
+
+    pub fn update(&mut self, loc_uint16: u16) {
+        // Get the row and column bytes
+        let row_uint8: u8 = (loc_uint16 >> 8) as u8;
+        let col_uint8: u8 = (loc_uint16 & 0xff) as u8;
+
+        // Get the row direction (2's complement of first 2 bits)
+        // TODO I don't know why this is different
+        // self.rowDir = (row_uint8 >> 6) as i8;
+        // if self.rowDir >= 2 {
+        //     self.rowDir -= 4;
+        // }
+
+        // Get the row value (last 6 bits)
+        self.row = (row_uint8 & 0x3f) as i8;
+
+        // Get the col direction (2's complement of first 2 bits)
+        // TODO I don't know why this is different
+        // self.colDir = (col_uint8 >> 6) as i8;
+        // if self.colDir >= 2 {
+        //     self.colDir -= 4;
+        // }
+
+        // Get the column value (last 6 bits)
+        self.col = (col_uint8 & 0x3f) as i8;
+    }
 }
 
 // Returns the squared Euclidean distance between two points.
