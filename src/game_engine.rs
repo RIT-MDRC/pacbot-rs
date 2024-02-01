@@ -84,6 +84,7 @@ impl GameEngine {
         self.state.pacman_loc = location;
         if !self.paused {
             self.state.collect_pellet((location.row, location.col));
+            self.state.check_collisions();
         }
     }
 }
