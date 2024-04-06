@@ -145,8 +145,8 @@ impl GameState {
     /**************************** Ghost Array Helpers *****************************/
 
     /// Returns an iterator that yields mutable references to the four ghosts.
-    pub fn ghosts_mut(&self) -> impl Iterator<Item = GhostState> + '_ {
-        self.ghosts.iter().cloned()
+    pub fn ghosts_mut(&mut self) -> impl Iterator<Item = &mut GhostState> + '_ {
+        self.ghosts.iter_mut()
     }
 
     /**************************** Curr Ticks Functions ****************************/
