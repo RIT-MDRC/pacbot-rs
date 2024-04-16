@@ -18,7 +18,7 @@ pub const NONE: u8 = 4;
 pub const DIR_NAMES: [&str; NUM_DIRS + 1] = ["up", "left", "down", "right", "none"];
 
 /// An object to keep track of the position and direction of an agent.
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialOrd, PartialEq, Ord, Eq)]
 pub struct LocationState {
     pub row: i8, // Row
     pub col: i8, // Col
