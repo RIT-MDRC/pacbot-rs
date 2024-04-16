@@ -1,5 +1,4 @@
 use std::io::Cursor;
-use std::sync::{Arc, RwLock};
 use byteorder::{BigEndian, ReadBytesExt};
 
 use array_init::array_init;
@@ -47,7 +46,7 @@ pub struct GameState {
     pub fruit_steps: u8,
 
     /* Ghosts - 4 * 3 = 12 bytes */
-    pub ghosts: [Arc<RwLock<GhostState>>; 4],
+    pub ghosts: [GhostState; 4],
 
     /// The current ghost combo.
     pub ghost_combo: u8,
@@ -89,7 +88,7 @@ impl GameState {
             fruit_steps: 0,
 
             // Ghosts
-            ghosts: array_init(|color| Arc::new(RwLock::new(GhostState::new(color as u8)))),
+            ghosts: array_init(|color| GhostState::new(color as u8)),
             ghost_combo: 0,
 
             // Pellet count at the start
@@ -122,7 +121,7 @@ impl GameState {
 
         // red ghost info
         for g in 0..4 {
-            let mut ghost = self.ghosts[g].write().unwrap();
+            let ghost = &mut self.ghosts[g];
             ghost.loc.update(cursor.read_u16::<BigEndian>().unwrap());
             ghost.update_aux(cursor.read_u8().unwrap());
         }
@@ -146,8 +145,8 @@ impl GameState {
     /**************************** Ghost Array Helpers *****************************/
 
     /// Returns an iterator that yields mutable references to the four ghosts.
-    pub fn ghosts_mut(&self) -> impl Iterator<Item = Arc<RwLock<GhostState>>> + '_ {
-        self.ghosts.iter().map(|a| a.clone())
+    pub fn ghosts_mut(&mut self) -> impl Iterator<Item = &mut GhostState> + '_ {
+        self.ghosts.iter_mut()
     }
 
     /**************************** Curr Ticks Functions ****************************/

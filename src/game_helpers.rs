@@ -2,7 +2,8 @@ type Position = (i8, i8);
 
 /***************************** Bitwise Operations *****************************/
 
-use rand::prelude::IteratorRandom;
+use rand::seq::IteratorRandom;
+
 use crate::{
     game_modes::GameMode, game_state::GameState, ghost_state::*, location::*, variables::*,
 };
@@ -133,9 +134,9 @@ impl GameState {
         // Loop over all the ghosts and check for collisions with Pacman.
         let mut num_ghosts_eaten = 0;
         let mut did_pacman_die = false;
+        let pacman_loc = self.pacman_loc;
         for ghost in self.ghosts_mut() {
-            let mut ghost = ghost.write().unwrap();
-            if self.pacman_loc.collides_with(ghost.loc) {
+            if pacman_loc.collides_with(ghost.loc) {
                 // If the ghost was already eaten, skip it.
                 if ghost.is_eaten() {
                     continue;
@@ -255,7 +256,6 @@ impl GameState {
 
         // Loop over all the ghosts
         for ghost in self.ghosts_mut() {
-            let mut ghost = ghost.write().unwrap();
             /*
                 To frighten a ghost, set its fright steps to a specified value
                 and trap it for one step (to force the direction to reverse)
@@ -271,7 +271,6 @@ impl GameState {
     pub fn reverse_all_ghosts(&mut self) {
         // Loop over all the ghosts
         for ghost in self.ghosts_mut() {
-            let mut ghost = ghost.write().unwrap();
             /*
                 To change the direction a ghost, trap it for one step
                 (to force the direction to reverse)
@@ -289,14 +288,12 @@ impl GameState {
 
         // Reset each of the ghosts
         for ghost in self.ghosts_mut() {
-            let mut ghost = ghost.write().unwrap();
             ghost.reset();
         }
 
         // If no lives are left, set all ghosts to stare at the player, menacingly
         if self.get_lives() == 0 {
             for ghost in self.ghosts_mut() {
-                let mut ghost = ghost.write().unwrap();
                 if ghost.color != ORANGE {
                     ghost.next_loc.dir = NONE;
                 } else {
@@ -311,32 +308,30 @@ impl GameState {
     pub fn update_all_ghosts(&mut self) {
         // Loop over the individual ghosts
         for ghost in self.ghosts_mut() {
-            let mut ghost = ghost.write().unwrap();
             ghost.update();
         }
     }
 
     // A game state function to plan all ghosts at once
     pub fn plan_all_ghosts(&mut self) {
-        // Plan each ghost's next move concurrently
-        for ghost in self.ghosts_mut() {
-            let chase_color = ghost.read().unwrap().color;
+        // Plan each ghost's next move
+        for ghost_idx in 0..self.ghosts.len() {
+            let chase_color = self.ghosts[ghost_idx].color;
             let chase_target = self.get_chase_target(chase_color);
-            let mut ghost = ghost.write().unwrap();
 
             // If the location is empty (i.e. after a reset/respawn), don't plan
-            if ghost.loc.is_empty() {
+            if self.ghosts[ghost_idx].loc.is_empty() {
                 return;
             }
 
             // Determine the next position based on the current direction
-            let loc = ghost.loc;
-            ghost.next_loc.advance_from(loc);
+            let loc = self.ghosts[ghost_idx].loc;
+            self.ghosts[ghost_idx].next_loc.advance_from(loc);
 
             // If the ghost is trapped, reverse the current direction and return
-            if ghost.is_trapped() {
-                ghost.next_loc.dir = ghost.next_loc.get_reversed_dir();
-                ghost.dec_trapped_steps();
+            if self.ghosts[ghost_idx].is_trapped() {
+                self.ghosts[ghost_idx].next_loc.dir = self.ghosts[ghost_idx].next_loc.get_reversed_dir();
+                self.ghosts[ghost_idx].dec_trapped_steps();
                 return;
             }
 
@@ -347,28 +342,28 @@ impl GameState {
 
                 Otherwise: pick chase or scatter targets, depending on the mode.
             */
-            let target_loc = if ghost.spawning
-                && !ghost.loc.collides_with(GHOST_SPAWN_LOCS[RED as usize])
-                && !ghost.next_loc.collides_with(GHOST_SPAWN_LOCS[RED as usize])
+            let target_loc = if self.ghosts[ghost_idx].spawning
+                && !self.ghosts[ghost_idx].loc.collides_with(GHOST_SPAWN_LOCS[RED as usize])
+                && !self.ghosts[ghost_idx].next_loc.collides_with(GHOST_SPAWN_LOCS[RED as usize])
             {
                 GHOST_SPAWN_LOCS[RED as usize].get_coords()
             } else {
                 match self.mode {
                     GameMode::CHASE => chase_target,
-                    GameMode::SCATTER => ghost.scatter_target.get_coords(),
+                    GameMode::SCATTER => self.ghosts[ghost_idx].scatter_target.get_coords(),
                 }
             };
 
             // Determine which of the four neighboring moves to the next location are valid.
-            let moves = (0..NUM_DIRS as u8).map(|dir| (dir, ghost.next_loc.get_neighbor_coords(dir)));
+            let moves = (0..NUM_DIRS as u8).map(|dir| (dir, self.ghosts[ghost_idx].next_loc.get_neighbor_coords(dir)));
             let valid_moves = moves.filter(|&(dir, loc)| {
                 // If this move would make the ghost reverse, skip it.
-                if dir == ghost.next_loc.get_reversed_dir() {
+                if dir == self.ghosts[ghost_idx].next_loc.get_reversed_dir() {
                     return false;
                 }
 
                 // Considerations when the ghost is spawning.
-                if ghost.spawning {
+                if self.ghosts[ghost_idx].spawning {
                     // Determine if the move would be within the ghost house.
                     if self.ghost_spawn_at(loc) {
                         return true;
@@ -385,7 +380,7 @@ impl GameState {
                 !self.wall_at(loc)
             });
 
-            let chosen_move = if ghost.fright_steps > 1 {
+            let chosen_move = if self.ghosts[ghost_idx].fright_steps > 1 {
                 // If the ghost will still be frightened one tick later, immediately choose
                 // a random valid direction and return.
                 valid_moves.choose(&mut rand::thread_rng())
@@ -396,7 +391,7 @@ impl GameState {
                 .expect("ghost has no valid moves!");
 
             // Once we have picked a move, set next_loc.dir to that direction.
-            ghost.next_loc.dir = chosen_move.0;
+            self.ghosts[ghost_idx].next_loc.dir = chosen_move.0;
         }
     }
 
@@ -429,7 +424,7 @@ impl GameState {
         let (pivot_row, pivot_col) = self.pacman_loc.get_ahead_coords(2);
 
         // Get the current location of the red ghost
-        let (red_row, red_col) = self.ghosts[RED as usize].read().unwrap().loc.get_coords();
+        let (red_row, red_col) = self.ghosts[RED as usize].loc.get_coords();
 
         // Return the pair of coordinates of the calculated target
         ((2 * pivot_row - red_row), (2 * pivot_col - red_col))
@@ -445,7 +440,7 @@ impl GameState {
         let pacman_pos = self.pacman_loc.get_coords();
 
         // Get the orange ghost's current location
-        let orange_pos = self.ghosts[ORANGE as usize].read().unwrap().loc.get_coords();
+        let orange_pos = self.ghosts[ORANGE as usize].loc.get_coords();
 
         // If Pacman is far enough from the ghost, return Pacman's location
         if dist_sq(orange_pos, pacman_pos) >= 64 {
@@ -453,7 +448,7 @@ impl GameState {
         }
 
         // Otherwise, return the scatter location of orange
-        self.ghosts[ORANGE as usize].read().unwrap().scatter_target.get_coords()
+        self.ghosts[ORANGE as usize].scatter_target.get_coords()
     }
 
     // Returns the chase location of an arbitrary ghost color
