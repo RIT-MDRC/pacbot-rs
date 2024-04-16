@@ -74,6 +74,11 @@ impl GameEngine {
         &self.state
     }
 
+    /// Get a mutable reference to the current game state
+    pub fn state_mut(&mut self) -> &mut GameState {
+        &mut self.state
+    }
+
     /// Get whether the game is paused
     pub fn is_paused(&self) -> bool {
         self.paused
