@@ -20,6 +20,10 @@ pub struct GameState {
     /// Game mode.
     pub mode: GameMode,
 
+    /// Whether game is paused - has no effect on internal messages, simply copies value
+    /// from incoming game states
+    pub paused: bool,
+
     /// The number of steps (update periods) before the mode changes.
     pub mode_steps: u8,
 
@@ -71,6 +75,7 @@ impl GameState {
             curr_ticks: 0,
             update_period: INIT_UPDATE_PERIOD,
             mode: INIT_MODE,
+            paused: true,
 
             // Additional header-related info
             mode_steps: INIT_MODE.duration(),
@@ -100,7 +105,7 @@ impl GameState {
         }
     }
 
-    pub fn update(&mut self, bytes: &[u8]) -> bool {
+    pub fn update(&mut self, bytes: &[u8]) {
         let mut cursor = Cursor::new(bytes);
 
         // General game info
@@ -113,6 +118,7 @@ impl GameState {
             _ => unreachable!()
         };
         self.mode = mode;
+        self.paused = paused;
         self.mode_steps = cursor.read_u8().unwrap();
         let _mode_duration = cursor.read_u8().unwrap();
         self.curr_score = cursor.read_u16::<BigEndian>().unwrap();
@@ -138,8 +144,31 @@ impl GameState {
         for i in 0..31 {
             self.pellets[i] = cursor.read_u32::<BigEndian>().unwrap();
         }
+    }
 
-        paused
+    /// Start the game engine - should be launched as a go-routine.
+    pub fn step(&mut self) {
+        let lives_before = self.curr_lives;
+        self.next_tick();
+        if self.update_ready() {
+            self.update_all_ghosts();
+            self.try_respawn_pacman();
+            self.check_collisions();
+            self.handle_step_events();
+        }
+        if self.update_ready() {
+            self.plan_all_ghosts();
+        }
+        if self.curr_lives < lives_before {
+            self.paused = true;
+        }
+    }
+
+    /// Set pacman's location
+    pub fn set_pacman_location(&mut self, location: LocationState) {
+        self.pacman_loc = location;
+        self.collect_pellet((location.row, location.col));
+        self.check_collisions();
     }
 
     /**************************** Ghost Array Helpers *****************************/
