@@ -1,3 +1,5 @@
+use rand::prelude::SmallRng;
+use rand::SeedableRng;
 use rand::seq::IteratorRandom;
 
 use crate::{
@@ -136,7 +138,7 @@ impl GhostState {
         let chosen_move = if self.fright_steps > 1 {
             // If the ghost will still be frightened one tick later, immediately choose
             // a random valid direction and return.
-            valid_moves.choose(&mut rand::thread_rng())
+            valid_moves.choose(&mut SmallRng::from_entropy())
         } else {
             // Otherwise, pick the move that takes the ghost closest to its target.
             valid_moves.min_by_key(|&(_dir, loc)| dist_sq(loc, target_loc))

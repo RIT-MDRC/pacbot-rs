@@ -1,7 +1,5 @@
-use std::io::Cursor;
-use byteorder::{BigEndian, ReadBytesExt};
-
 use array_init::array_init;
+use core2::io::{Cursor, Read};
 use serde::{Deserialize, Serialize};
 
 use crate::{game_modes::GameMode, ghost_state::GhostState, location::LocationState, variables::*};
@@ -105,13 +103,31 @@ impl GameState {
         }
     }
 
-    pub fn update(&mut self, bytes: &[u8]) {
+    pub fn update(&mut self, bytes: &[u8]) -> core2::io::Result<()> {
         let mut cursor = Cursor::new(bytes);
 
+        fn get_u8(cursor: &mut Cursor<&[u8]>) -> core2::io::Result<u8> {
+            let mut buf = [0];
+            cursor.read_exact(&mut buf)?;
+            Ok(buf[0])
+        }
+
+        fn get_u16(cursor: &mut Cursor<&[u8]>) -> core2::io::Result<u16> {
+            let mut buf = [0; 2];
+            cursor.read_exact(&mut buf)?;
+            Ok(u16::from_be_bytes(buf))
+        }
+
+        fn get_u32(cursor: &mut Cursor<&[u8]>) -> core2::io::Result<u32> {
+            let mut buf = [0; 4];
+            cursor.read_exact(&mut buf)?;
+            Ok(u32::from_be_bytes(buf))
+        }
+
         // General game info
-        self.curr_ticks = cursor.read_u16::<BigEndian>().unwrap() as u32;
-        self.update_period = cursor.read_u8().unwrap();
-        let (mode, paused) = match cursor.read_u8().unwrap() {
+        self.curr_ticks = get_u16(&mut cursor)? as u32;
+        self.update_period = get_u8(&mut cursor)?;
+        let (mode, paused) = match get_u8(&mut cursor)? {
             0 => (GameMode::CHASE, true),
             1 => (GameMode::SCATTER, false),
             2 => (GameMode::CHASE, false),
@@ -119,31 +135,33 @@ impl GameState {
         };
         self.mode = mode;
         self.paused = paused;
-        self.mode_steps = cursor.read_u8().unwrap();
-        let _mode_duration = cursor.read_u8().unwrap();
-        self.curr_score = cursor.read_u16::<BigEndian>().unwrap();
-        self.curr_level = cursor.read_u8().unwrap();
-        self.curr_lives = cursor.read_u8().unwrap();
+        self.mode_steps = get_u8(&mut cursor)?;
+        let _mode_duration = get_u8(&mut cursor)?;
+        self.curr_score = get_u16(&mut cursor)?;
+        self.curr_level = get_u8(&mut cursor)?;
+        self.curr_lives = get_u8(&mut cursor)?;
 
         // red ghost info
         for g in 0..4 {
             let ghost = &mut self.ghosts[g];
-            ghost.loc.update(cursor.read_u16::<BigEndian>().unwrap());
-            ghost.update_aux(cursor.read_u8().unwrap());
+            ghost.loc.update(get_u16(&mut cursor)?);
+            ghost.update_aux(get_u8(&mut cursor)?);
         }
 
         // pacman location info
-        self.pacman_loc.update(cursor.read_u16::<BigEndian>().unwrap());
+        self.pacman_loc.update(get_u16(&mut cursor)?);
 
         // fruit location info
-        self.fruit_loc.update(cursor.read_u16::<BigEndian>().unwrap());
-        self.fruit_steps = cursor.read_u8().unwrap();
-        let _fruit_duration = cursor.read_u8().unwrap();
+        self.fruit_loc.update(get_u16(&mut cursor)?);
+        self.fruit_steps = get_u8(&mut cursor)?;
+        let _fruit_duration = get_u8(&mut cursor)?;
 
         // Pellet info
         for i in 0..31 {
-            self.pellets[i] = cursor.read_u32::<BigEndian>().unwrap();
+            self.pellets[i] = get_u32(&mut cursor)?;
         }
+
+        Ok(())
     }
 
     /// Start the game engine - should be launched as a go-routine.
@@ -195,6 +213,7 @@ impl GameState {
     /// Helper function to set the update period
     pub fn set_update_period(&mut self, period: u8) {
         // Send a message to the terminal
+        #[cfg(std)]
         println!(
             "\x1b[36mGAME: Update period changed ({} -> {}) (t = {})\x1b[0m\n",
             self.get_update_period(),
@@ -248,6 +267,7 @@ impl GameState {
         }
 
         // Send a message to the terminal
+        #[cfg(std)]
         println!(
             "\x1b[32mGAME: Next level ({} -> {}) (t = {})\x1b[0m\n",
             level,
@@ -268,6 +288,7 @@ impl GameState {
     /// Helper function to set the lives left
     pub fn set_lives(&mut self, lives: u8) {
         // Send a message to the terminal
+        #[cfg(std)]
         println!(
             "\x1b[36mGAME: Lives changed ({} -> {})\x1b[0m\n",
             self.get_lives(),
@@ -288,6 +309,7 @@ impl GameState {
         }
 
         // Send a message to the terminal
+        #[cfg(std)]
         println!(
             "\x1b[31mGAME: Pacman lost a life ({} -> {}) (t = {})\x1b[0m\n",
             lives,
@@ -390,6 +412,7 @@ impl GameState {
         // If the level steps are 0, add a penalty by speeding up the game
         if self.level_steps == 0 {
             // Log the change to the terminal
+            #[cfg(std)]
             println!("\x1b[31mGAME: Long-game penalty applied\x1b[0m");
 
             // Drop the update period by 2
@@ -412,6 +435,7 @@ impl GameState {
     }
 }
 
+#[cfg(std)]
 impl Default for GameState {
     fn default() -> Self {
         Self::new()
