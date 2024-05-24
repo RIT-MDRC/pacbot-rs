@@ -65,6 +65,12 @@ pub struct GameState {
     pub walls: [u32; MAZE_ROWS],
 }
 
+impl Default for GameState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GameState {
     /// Creates a new game state with default values.
     pub fn new() -> Self {
