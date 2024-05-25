@@ -50,6 +50,14 @@ impl GhostState {
         self.spawning = (aux_info >> 7) != 0;
     }
 
+    pub fn get_aux(&self) -> u8 {
+        let mut aux_info = self.fright_steps & 0x3f;
+        if self.spawning {
+            aux_info |= 1 << 7;
+        }
+        aux_info
+    }
+
     /*************************** Ghost Frightened State ***************************/
 
     // Set the fright steps of a ghost

@@ -137,6 +137,10 @@ impl LocationState {
         // Get the column value (last 6 bits)
         self.col = (col_uint8 & 0x3f) as i8;
     }
+
+    pub fn to_uint16(&self) -> u16 {
+        (self.row as u16) << 8 | self.col as u16
+    }
 }
 
 // Returns the squared Euclidean distance between two points.

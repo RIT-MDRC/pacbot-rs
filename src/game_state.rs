@@ -170,6 +170,54 @@ impl GameState {
         Ok(())
     }
 
+    #[cfg(std)]
+    pub fn get_bytes(&self) -> Vec<u8> {
+        const FRUIT_DURATION: u8 = 30;
+
+        let mut b = vec![];
+
+        b.append(&mut (self.curr_ticks as u16).to_be_bytes().to_vec());
+        b.push(self.update_period);
+        b.push(match (self.mode, self.paused) {
+            (_, true) => 0,
+            (GameMode::SCATTER, false) => 1,
+            (GameMode::CHASE, false) => 2,
+        });
+        b.push(self.mode_steps);
+        // mode_duration
+        b.push(match (self.mode, self.paused) {
+            (GameMode::SCATTER, false) => GameMode::SCATTER.duration(),
+            (GameMode::CHASE, false) => GameMode::CHASE.duration(),
+            _ => 255,
+        });
+        b.append(&mut self.curr_score.to_be_bytes().to_vec());
+        b.push(self.curr_level);
+        b.push(self.curr_lives);
+
+        // ghost info
+        for g in 0..4 {
+            let ghost = &self.ghosts[g];
+            let loc = ghost.loc.to_uint16();
+            b.append(&mut loc.to_be_bytes().to_vec());
+            b.push(ghost.get_aux());
+        }
+
+        // pacman location
+        b.append(&mut self.pacman_loc.to_uint16().to_be_bytes().to_vec());
+
+        // fruit location info
+        b.append(&mut self.fruit_loc.to_uint16().to_be_bytes().to_vec());
+        b.push(self.fruit_steps);
+        b.push(FRUIT_DURATION);
+
+        // pellet info
+        for i in 0..31 {
+            b.append(&mut self.pellets[i].to_be_bytes().to_vec());
+        }
+
+        b
+    }
+
     /// Start the game engine - should be launched as a go-routine.
     pub fn step(&mut self) {
         let lives_before = self.curr_lives;
