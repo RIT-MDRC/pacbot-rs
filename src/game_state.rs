@@ -170,7 +170,7 @@ impl GameState {
         Ok(())
     }
 
-    #[cfg(std)]
+    #[cfg(feature = "std")]
     pub fn get_bytes(&self) -> Vec<u8> {
         const FRUIT_DURATION: u8 = 30;
 
@@ -267,7 +267,7 @@ impl GameState {
     /// Helper function to set the update period
     pub fn set_update_period(&mut self, period: u8) {
         // Send a message to the terminal
-        #[cfg(std)]
+        #[cfg(feature = "std")]
         println!(
             "\x1b[36mGAME: Update period changed ({} -> {}) (t = {})\x1b[0m\n",
             self.get_update_period(),
@@ -321,7 +321,7 @@ impl GameState {
         }
 
         // Send a message to the terminal
-        #[cfg(std)]
+        #[cfg(feature = "std")]
         println!(
             "\x1b[32mGAME: Next level ({} -> {}) (t = {})\x1b[0m\n",
             level,
@@ -342,7 +342,7 @@ impl GameState {
     /// Helper function to set the lives left
     pub fn set_lives(&mut self, lives: u8) {
         // Send a message to the terminal
-        #[cfg(std)]
+        #[cfg(feature = "std")]
         println!(
             "\x1b[36mGAME: Lives changed ({} -> {})\x1b[0m\n",
             self.get_lives(),
@@ -363,7 +363,7 @@ impl GameState {
         }
 
         // Send a message to the terminal
-        #[cfg(std)]
+        #[cfg(feature = "std")]
         println!(
             "\x1b[31mGAME: Pacman lost a life ({} -> {}) (t = {})\x1b[0m\n",
             lives,
@@ -466,7 +466,7 @@ impl GameState {
         // If the level steps are 0, add a penalty by speeding up the game
         if self.level_steps == 0 {
             // Log the change to the terminal
-            #[cfg(std)]
+            #[cfg(feature = "std")]
             println!("\x1b[31mGAME: Long-game penalty applied\x1b[0m");
 
             // Drop the update period by 2
@@ -486,12 +486,5 @@ impl GameState {
 
         // Decrement the fruit steps
         self.decrement_fruit_steps();
-    }
-}
-
-#[cfg(std)]
-impl Default for GameState {
-    fn default() -> Self {
-        Self::new()
     }
 }
