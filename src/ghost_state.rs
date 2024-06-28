@@ -17,7 +17,7 @@ pub const GHOST_NAMES: [&str; NUM_COLORS as usize] = ["red", "pink", "cyan", "or
 /*
 An object to keep track of the location and attributes of a ghost
 */
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialOrd, PartialEq)]
 pub struct GhostState {
     pub loc: LocationState,            // Current location
     pub next_loc: LocationState,       // Planned location (for next update)

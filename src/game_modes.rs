@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use crate::game_state::GameState;
 
 // The possible game modes.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum GameMode {
     SCATTER,
     CHASE,

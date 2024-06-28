@@ -6,7 +6,7 @@ use crate::{game_modes::GameMode, ghost_state::GhostState, location::LocationSta
 
 /// A game state object, to hold the internal game state and provide
 /// helper methods that can be accessed by the game engine.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialOrd, PartialEq)]
 pub struct GameState {
     /* Message header - 4 bytes */
     /// Current ticks.
