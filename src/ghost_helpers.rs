@@ -1,5 +1,5 @@
 use rand::prelude::SmallRng;
-use rand::SeedableRng;
+use rand::{Rng, SeedableRng};
 use rand::seq::IteratorRandom;
 
 use crate::{
@@ -74,7 +74,7 @@ impl GhostState {
     /******************** Ghost Planning (after serialization) ********************/
 
     /// Plan the ghost's next move
-    pub fn plan(&mut self, game_state: &GameState) {
+    pub fn plan(&mut self, game_state: &mut GameState) {
         // If the location is empty (i.e. after a reset/respawn), don't plan
         if self.loc.is_empty() {
             return;
@@ -138,7 +138,10 @@ impl GhostState {
         let chosen_move = if self.fright_steps > 1 {
             // If the ghost will still be frightened one tick later, immediately choose
             // a random valid direction and return.
-            valid_moves.choose(&mut SmallRng::from_entropy())
+            let mut rng = SmallRng::seed_from_u64(game_state.seed);
+            let chosen_move = valid_moves.choose(&mut rng);
+            game_state.seed = rng.gen();
+            chosen_move
         } else {
             // Otherwise, pick the move that takes the ghost closest to its target.
             valid_moves.min_by_key(|&(_dir, loc)| dist_sq(loc, target_loc))

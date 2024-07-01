@@ -3,7 +3,7 @@ type Position = (i8, i8);
 /***************************** Bitwise Operations *****************************/
 
 use rand::prelude::SmallRng;
-use rand::SeedableRng;
+use rand::{Rng, SeedableRng};
 use rand::seq::IteratorRandom;
 
 use crate::{
@@ -385,7 +385,10 @@ impl GameState {
             let chosen_move = if self.ghosts[ghost_idx].fright_steps > 1 {
                 // If the ghost will still be frightened one tick later, immediately choose
                 // a random valid direction and return.
-                valid_moves.choose(&mut SmallRng::from_entropy())
+                let mut rng = SmallRng::seed_from_u64(self.seed);
+                let chosen_move = valid_moves.choose(&mut rng);
+                self.seed = rng.gen();
+                chosen_move
             } else {
                 // Otherwise, pick the move that takes the ghost closest to its target.
                 valid_moves.min_by_key(|&(_dir, loc)| dist_sq(loc, target_loc))

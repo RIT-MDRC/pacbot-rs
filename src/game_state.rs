@@ -63,8 +63,12 @@ pub struct GameState {
     /* Auxiliary (non-serialized) state information */
     /// Wall state
     pub walls: [u32; MAZE_ROWS],
+
+    /// Used to generate ghost moves (updated each time)
+    pub seed: u64,
 }
 
+#[cfg(std)]
 impl Default for GameState {
     fn default() -> Self {
         Self::new()
@@ -73,7 +77,13 @@ impl Default for GameState {
 
 impl GameState {
     /// Creates a new game state with default values.
+    #[cfg(std)]
     pub fn new() -> Self {
+        Self::new_with_seed(&mut SmallRng::from_entropy())
+    }
+
+    /// Creates a new game state with default values.
+    pub fn new_with_seed(seed: u64) -> Self {
         Self {
             // Message header
             curr_ticks: 0,
@@ -106,6 +116,9 @@ impl GameState {
 
             // Walls
             walls: INIT_WALLS,
+
+            // For ghost moves
+            seed,
         }
     }
 
