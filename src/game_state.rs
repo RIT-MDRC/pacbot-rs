@@ -1,5 +1,9 @@
 use array_init::array_init;
 use core2::io::{Cursor, Read};
+#[cfg(feature = "std")]
+use rand::prelude::SmallRng;
+#[cfg(feature = "std")]
+use rand::{Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
 
 use crate::{game_modes::GameMode, ghost_state::GhostState, location::LocationState, variables::*};
@@ -68,7 +72,7 @@ pub struct GameState {
     pub seed: u64,
 }
 
-#[cfg(std)]
+#[cfg(feature = "std")]
 impl Default for GameState {
     fn default() -> Self {
         Self::new()
@@ -77,9 +81,9 @@ impl Default for GameState {
 
 impl GameState {
     /// Creates a new game state with default values.
-    #[cfg(std)]
+    #[cfg(feature = "std")]
     pub fn new() -> Self {
-        Self::new_with_seed(&mut SmallRng::from_entropy())
+        Self::new_with_seed(SmallRng::from_entropy().gen())
     }
 
     /// Creates a new game state with default values.
@@ -150,7 +154,7 @@ impl GameState {
             0 => (GameMode::CHASE, true),
             1 => (GameMode::SCATTER, false),
             2 => (GameMode::CHASE, false),
-            _ => unreachable!()
+            _ => unreachable!(),
         };
         self.mode = mode;
         self.paused = paused;
