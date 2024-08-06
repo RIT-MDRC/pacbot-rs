@@ -8,6 +8,8 @@ use crate::{game_modes::GameMode, ghost_state::GhostState, location::LocationSta
 
 /// A game state object, to hold the internal game state and provide
 /// helper methods that can be accessed by the game engine.
+///
+/// Logging can be disabled by setting the environment variable DISABLE_PACMAN_LOGGING
 #[derive(Clone, Debug, Serialize, Deserialize, PartialOrd, PartialEq)]
 pub struct GameState {
     /* Message header - 4 bytes */
@@ -284,14 +286,15 @@ impl GameState {
     /// Helper function to set the update period
     pub fn set_update_period(&mut self, period: u8) {
         // Send a message to the terminal
-        // todo optional logging
         #[cfg(feature = "std")]
-        println!(
-            "\x1b[36mGAME: Update period changed ({} -> {}) (t = {})\x1b[0m\n",
-            self.get_update_period(),
-            period,
-            self.curr_ticks,
-        );
+        if std::env::var("DISABLE_PACMAN_LOGGING").is_ok() {
+            println!(
+                "\x1b[36mGAME: Update period changed ({} -> {}) (t = {})\x1b[0m\n",
+                self.get_update_period(),
+                period,
+                self.curr_ticks,
+            );
+        }
 
         self.update_period = period // Update the update period
     }
@@ -340,12 +343,14 @@ impl GameState {
 
         // Send a message to the terminal
         #[cfg(feature = "std")]
-        println!(
-            "\x1b[32mGAME: Next level ({} -> {}) (t = {})\x1b[0m\n",
-            level,
-            level + 1,
-            self.curr_ticks,
-        );
+        if std::env::var("DISABLE_PACMAN_LOGGING").is_ok() {
+            println!(
+                "\x1b[32mGAME: Next level ({} -> {}) (t = {})\x1b[0m\n",
+                level,
+                level + 1,
+                self.curr_ticks,
+            );
+        }
 
         self.set_level(self.curr_level + 1); // Update the level
     }
@@ -361,11 +366,13 @@ impl GameState {
     pub fn set_lives(&mut self, lives: u8) {
         // Send a message to the terminal
         #[cfg(feature = "std")]
-        println!(
-            "\x1b[36mGAME: Lives changed ({} -> {})\x1b[0m\n",
-            self.get_lives(),
-            lives,
-        );
+        if std::env::var("DISABLE_PACMAN_LOGGING").is_ok() {
+            println!(
+                "\x1b[36mGAME: Lives changed ({} -> {})\x1b[0m\n",
+                self.get_lives(),
+                lives,
+            );
+        }
 
         self.curr_lives = lives; // Update the lives
     }
@@ -382,12 +389,14 @@ impl GameState {
 
         // Send a message to the terminal
         #[cfg(feature = "std")]
-        println!(
-            "\x1b[31mGAME: Pacman lost a life ({} -> {}) (t = {})\x1b[0m\n",
-            lives,
-            lives - 1,
-            self.curr_ticks,
-        );
+        if std::env::var("DISABLE_PACMAN_LOGGING").is_ok() {
+            println!(
+                "\x1b[31mGAME: Pacman lost a life ({} -> {}) (t = {})\x1b[0m\n",
+                lives,
+                lives - 1,
+                self.curr_ticks,
+            );
+        }
 
         self.curr_lives -= 1; // Update the lives
     }
@@ -485,7 +494,9 @@ impl GameState {
         if self.level_steps == 0 {
             // Log the change to the terminal
             #[cfg(feature = "std")]
-            println!("\x1b[31mGAME: Long-game penalty applied\x1b[0m");
+            if std::env::var("DISABLE_PACMAN_LOGGING").is_ok() {
+                println!("\x1b[31mGAME: Long-game penalty applied\x1b[0m");
+            }
 
             // Drop the update period by 2
             self.set_update_period(u8::max(1, self.get_update_period().saturating_sub(2)));
