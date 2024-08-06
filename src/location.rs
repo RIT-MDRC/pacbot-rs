@@ -1,32 +1,81 @@
 use serde::{Deserialize, Serialize};
+
+use Direction::*;
+
+use crate::game_helpers::Position;
 use crate::variables::EMPTY_LOC;
 
-/// Directions:              U   L  D  R  None
-pub const D_ROW: [i8; 5] = [-1, -0, 1, 0, 0];
-pub const D_COL: [i8; 5] = [-0, -1, 0, 1, 0];
+pub fn is_super_pellet(position: Position) -> bool {
+    let (row, col) = position;
+    ((row == 3) || (row == 23)) && ((col == 1) || (col == 26))
+}
 
-/// Enum-like declaration to hold the direction indices from above
+pub const SUPER_PELLETS: [Position; 4] = [(3, 1), (3, 26), (23, 1), (23, 26)];
 
-pub const UP: u8 = 0;
-pub const LEFT: u8 = 1;
-pub const DOWN: u8 = 2;
-pub const RIGHT: u8 = 3;
-pub const NUM_DIRS: usize = 4;
-pub const NONE: u8 = 4;
+/// Directions
+#[derive(Copy, Clone, Debug, PartialOrd, PartialEq, Ord, Eq, Serialize, Deserialize)]
+#[repr(u8)]
+pub enum Direction {
+    Up = 0,
+    Left = 1,
+    Down = 2,
+    Right = 3,
+    Stay = 4,
+}
 
-// Names of the directions (forr debugging)
-pub const DIR_NAMES: [&str; NUM_DIRS + 1] = ["up", "left", "down", "right", "none"];
+impl TryFrom<u8> for Direction {
+    type Error = ();
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Up),
+            1 => Ok(Left),
+            2 => Ok(Down),
+            3 => Ok(Right),
+            4 => Ok(Stay),
+            _ => Err(()),
+        }
+    }
+}
+
+impl Direction {
+    pub const fn all_except_stay() -> [Direction; 4] {
+        [Up, Left, Down, Right]
+    }
+
+    /// Get the opposite direction, ex. Up -> Down
+    pub const fn opposite(&self) -> Direction {
+        match self {
+            Up => Down,
+            Left => Right,
+            Down => Up,
+            Right => Left,
+            Stay => Stay,
+        }
+    }
+
+    /// Get the direction vector, ex. Up -> (-1, 0)
+    pub const fn vector(&self) -> (i8, i8) {
+        match self {
+            Up => (-1, 0),
+            Down => (1, 0),
+            Left => (0, -1),
+            Right => (0, 1),
+            Stay => (0, 0),
+        }
+    }
+}
 
 /// An object to keep track of the position and direction of an agent.
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialOrd, PartialEq, Ord, Eq)]
 pub struct LocationState {
-    pub row: i8, // Row
-    pub col: i8, // Col
-    pub dir: u8, // Index of the direction, within the direction arrays
+    pub row: i8,
+    pub col: i8,
+    pub dir: Direction,
 }
 
 impl LocationState {
-    pub const fn new(row: i8, col: i8, dir: u8) -> Self {
+    pub const fn new(row: i8, col: i8, dir: Direction) -> Self {
         Self { row, col, dir }
     }
 
@@ -49,25 +98,6 @@ impl LocationState {
         (self.row == EMPTY_LOC.row) && (self.col == EMPTY_LOC.col)
     }
 
-    // Return a direction corresponding to an existing location
-    pub fn get_dir(&self) -> u8 {
-        self.dir
-    }
-
-    pub fn get_reversed_dir(&self) -> u8 {
-        // Copy the current direction
-        let dir = self.get_dir();
-
-        // Switch between up and down, or left and right
-        match dir {
-            UP => DOWN,
-            LEFT => RIGHT,
-            DOWN => UP,
-            RIGHT => LEFT,
-            _ => dir,
-        }
-    }
-
     // Return a set of coordinates corresponding to an existing location
     pub fn get_coords(&self) -> (i8, i8) {
         // Return the pair of coordinates
@@ -75,12 +105,9 @@ impl LocationState {
     }
 
     // Create a new set of coordinates as the neighbor of an existing location
-    pub fn get_neighbor_coords(&self, dir: u8) -> (i8, i8) {
+    pub fn get_neighbor_coords(&self, dir: Direction) -> (i8, i8) {
         // Add the deltas to the coordinates and return the pair
-        (
-            self.row + D_ROW[dir as usize],
-            self.col + D_COL[dir as usize],
-        )
+        (self.row + dir.vector().0, self.col + dir.vector().1)
     }
 
     /*
@@ -90,8 +117,8 @@ impl LocationState {
     pub fn get_ahead_coords(&self, spaces: i8) -> (i8, i8) {
         // Add the deltas to the coordinates and return the pair
         (
-            self.row + D_ROW[self.dir as usize] * spaces,
-            self.col + D_COL[self.dir as usize] * spaces,
+            self.row + self.dir.vector().0 * spaces,
+            self.col + self.dir.vector().1 * spaces,
         )
     }
 
@@ -104,7 +131,7 @@ impl LocationState {
         (self.row, self.col) = loc2.get_ahead_coords(1);
 
         // Keep the same direction by default
-        self.dir = loc2.get_dir();
+        self.dir = loc2.dir;
     }
 
     // Move a given location state to specified coordinates

@@ -1,18 +1,38 @@
 use serde::{Deserialize, Serialize};
+
+use GhostColor::*;
+
 use crate::{
     location::LocationState,
     variables::{EMPTY_LOC, GHOST_SCATTER_TARGETS, GHOST_SPAWN_LOCS, GHOST_TRAPPED_STEPS},
 };
 
-// Enum-like declaration to hold the ghost colors
-pub const RED: u8 = 0;
-pub const PINK: u8 = 1;
-pub const CYAN: u8 = 2;
-pub const ORANGE: u8 = 3;
-pub const NUM_COLORS: u8 = 4;
+/// Ghost colors
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialOrd, PartialEq)]
+pub enum GhostColor {
+    Red = 0,
+    Pink = 1,
+    Cyan = 2,
+    Orange = 3,
+}
+
+impl TryFrom<u8> for GhostColor {
+    type Error = ();
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Red),
+            1 => Ok(Pink),
+            2 => Ok(Cyan),
+            3 => Ok(Orange),
+            _ => Err(()),
+        }
+    }
+}
 
 // Names of the ghosts (not the nicknames, just the colors, for debugging)
-pub const GHOST_NAMES: [&str; NUM_COLORS as usize] = ["red", "pink", "cyan", "orange"];
+pub const GHOST_NAMES: [GhostColor; 4] = [Red, Pink, Cyan, Orange];
 
 /*
 An object to keep track of the location and attributes of a ghost
@@ -22,7 +42,7 @@ pub struct GhostState {
     pub loc: LocationState,            // Current location
     pub next_loc: LocationState,       // Planned location (for next update)
     pub scatter_target: LocationState, // Position of (fixed) scatter target
-    pub color: u8,
+    pub color: GhostColor,
     pub trapped_steps: u8,
     pub fright_steps: u8,
     pub spawning: bool, // Flag set when spawning
@@ -31,13 +51,13 @@ pub struct GhostState {
 
 impl GhostState {
     // Create a new ghost state with given location and color values
-    pub fn new(color: u8) -> Self {
+    pub fn new(color: GhostColor) -> Self {
         Self {
             loc: EMPTY_LOC,
             next_loc: GHOST_SPAWN_LOCS[color as usize],
-            scatter_target: GHOST_SCATTER_TARGETS[color as usize],
+            scatter_target: GHOST_SCATTER_TARGETS[color as u8 as usize],
             color,
-            trapped_steps: GHOST_TRAPPED_STEPS[color as usize],
+            trapped_steps: GHOST_TRAPPED_STEPS[color as u8 as usize],
             fright_steps: 0,
             spawning: true,
             eaten: false,

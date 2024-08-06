@@ -1,5 +1,7 @@
 use array_init::array_init;
 use core2::io::{Cursor, Read};
+#[cfg(feature = "std")]
+use rand::{prelude::SmallRng, RngCore, SeedableRng};
 use serde::{Deserialize, Serialize};
 
 use crate::{game_modes::GameMode, ghost_state::GhostState, location::LocationState, variables::*};
@@ -68,7 +70,7 @@ pub struct GameState {
     pub seed: u64,
 }
 
-#[cfg(std)]
+#[cfg(feature = "std")]
 impl Default for GameState {
     fn default() -> Self {
         Self::new()
@@ -77,9 +79,9 @@ impl Default for GameState {
 
 impl GameState {
     /// Creates a new game state with default values.
-    #[cfg(std)]
+    #[cfg(feature = "std")]
     pub fn new() -> Self {
-        Self::new_with_seed(&mut SmallRng::from_entropy())
+        Self::new_with_seed(SmallRng::from_entropy().next_u64())
     }
 
     /// Creates a new game state with default values.
@@ -107,7 +109,7 @@ impl GameState {
             fruit_steps: 0,
 
             // Ghosts
-            ghosts: array_init(|color| GhostState::new(color as u8)),
+            ghosts: array_init(|color| GhostState::new((color as u8).try_into().unwrap())),
             ghost_combo: 0,
 
             // Pellet count at the start
@@ -122,6 +124,7 @@ impl GameState {
         }
     }
 
+    // todo make this into deserialize
     pub fn update(&mut self, bytes: &[u8]) -> core2::io::Result<()> {
         let mut cursor = Cursor::new(bytes);
 
@@ -150,7 +153,7 @@ impl GameState {
             0 => (GameMode::CHASE, true),
             1 => (GameMode::SCATTER, false),
             2 => (GameMode::CHASE, false),
-            _ => unreachable!()
+            _ => unreachable!(),
         };
         self.mode = mode;
         self.paused = paused;
@@ -183,6 +186,7 @@ impl GameState {
         Ok(())
     }
 
+    // todo make this into serialize
     #[cfg(feature = "std")]
     pub fn get_bytes(&self) -> Vec<u8> {
         const FRUIT_DURATION: u8 = 30;
@@ -231,7 +235,7 @@ impl GameState {
         b
     }
 
-    /// Start the game engine - should be launched as a go-routine.
+    /// Start the game engine
     pub fn step(&mut self) {
         let lives_before = self.curr_lives;
         self.next_tick();
@@ -251,16 +255,16 @@ impl GameState {
 
     /// Set pacman's location
     pub fn set_pacman_location(&mut self, location: LocationState) {
+        // todo direction
+        // Check if there is a wall at the anticipated location, and return if so
+        if !self.in_bounds((location.row, location.col))
+            || self.wall_at((location.row, location.col))
+        {
+            return;
+        }
         self.pacman_loc = location;
         self.collect_pellet((location.row, location.col));
         self.check_collisions();
-    }
-
-    /**************************** Ghost Array Helpers *****************************/
-
-    /// Returns an iterator that yields mutable references to the four ghosts.
-    pub fn ghosts_mut(&mut self) -> impl Iterator<Item = &mut GhostState> + '_ {
-        self.ghosts.iter_mut()
     }
 
     /**************************** Curr Ticks Functions ****************************/
@@ -280,6 +284,7 @@ impl GameState {
     /// Helper function to set the update period
     pub fn set_update_period(&mut self, period: u8) {
         // Send a message to the terminal
+        // todo optional logging
         #[cfg(feature = "std")]
         println!(
             "\x1b[36mGAME: Update period changed ({} -> {}) (t = {})\x1b[0m\n",

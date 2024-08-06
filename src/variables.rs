@@ -1,7 +1,4 @@
-use crate::{
-    game_modes::GameMode,
-    location::{LocationState, DOWN, LEFT, NONE, RIGHT, UP},
-};
+use crate::{game_modes::GameMode, location::Direction::*, location::LocationState};
 
 /// The number of rows in the pellets and walls states
 pub const MAZE_ROWS: usize = 31;
@@ -31,10 +28,10 @@ pub const INIT_LIVES: u8 = 3;
 pub const GHOST_HOUSE_EXIT_POS: (i8, i8) = (12, 13);
 
 /// Spawn position for Pacman
-pub const PACMAN_SPAWN_LOC: LocationState = LocationState::new(23, 13, RIGHT);
+pub const PACMAN_SPAWN_LOC: LocationState = LocationState::new(23, 13, Up);
 
 /// Spawn position for the fruit
-pub const FRUIT_SPAWN_LOC: LocationState = LocationState::new(17, 13, NONE);
+pub const FRUIT_SPAWN_LOC: LocationState = LocationState::new(17, 13, Stay);
 
 // The number of steps that the fruit stays on the maze for
 pub const FRUIT_DURATION: u8 = 30;
@@ -43,22 +40,22 @@ pub const FRUIT_DURATION: u8 = 30;
 pub const FRUIT_POINTS: u16 = 100;
 
 // "Invalid" location - serializes to 0x00100000 0x00100000
-pub const EMPTY_LOC: LocationState = LocationState::new(32, 32, NONE);
+pub const EMPTY_LOC: LocationState = LocationState::new(32, 32, Stay);
 
 // Spawn positions for the ghosts
 pub const GHOST_SPAWN_LOCS: [LocationState; 4] = [
-    LocationState::new(11, 13, LEFT), // red
-    LocationState::new(13, 13, DOWN), // pink
-    LocationState::new(14, 11, UP),   // cyan
-    LocationState::new(14, 15, UP),   // orange
+    LocationState::new(11, 13, Left), // red
+    LocationState::new(13, 13, Down), // pink
+    LocationState::new(14, 11, Up),   // cyan
+    LocationState::new(14, 15, Up),   // orange
 ];
 
 // Scatter targets for the ghosts - should remain constant
 pub const GHOST_SCATTER_TARGETS: [LocationState; 4] = [
-    LocationState::new(-3, 25, NONE), // red
-    LocationState::new(-3, 2, NONE),  // pink
-    LocationState::new(31, 27, NONE), // cyan
-    LocationState::new(31, 0, NONE),  // orange
+    LocationState::new(-3, 25, Stay), // red
+    LocationState::new(-3, 2, Stay),  // pink
+    LocationState::new(31, 27, Stay), // cyan
+    LocationState::new(31, 0, Stay),  // orange
 ];
 
 // The number of steps that the ghosts stay in the trapped state for

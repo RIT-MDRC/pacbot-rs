@@ -1,14 +1,17 @@
-type Position = (i8, i8);
+use rand::prelude::SmallRng;
+use rand::seq::IteratorRandom;
+use rand::{Rng, SeedableRng};
+
+use crate::ghost_state::GhostColor;
+use crate::location::Direction::*;
+use crate::{
+    game_modes::GameMode, game_state::GameState, ghost_state::GhostColor::*, location::*,
+    variables::*,
+};
+
+pub type Position = (i8, i8);
 
 /***************************** Bitwise Operations *****************************/
-
-use rand::prelude::SmallRng;
-use rand::{Rng, SeedableRng};
-use rand::seq::IteratorRandom;
-
-use crate::{
-    game_modes::GameMode, game_state::GameState, ghost_state::*, location::*, variables::*,
-};
 
 fn get_bit_u32(num: u32, bit_idx: usize) -> bool {
     ((num >> bit_idx) & 1) == 1
@@ -55,7 +58,6 @@ impl GameState {
 
     /*
     Collects a pellet if it is at a given location
-    Returns the number of pellets that are left
     */
     pub fn collect_pellet(&mut self, pos: Position) {
         let (row, col) = pos;
@@ -76,7 +78,7 @@ impl GameState {
         self.decrement_num_pellets();
 
         // If the we are in particular rows and columns, it is a super pellet
-        let super_pellet = ((row == 3) || (row == 23)) && ((col == 1) || (col == 26));
+        let super_pellet = is_super_pellet((row, col));
 
         // Make all the ghosts frightened if a super pellet is collected
         if super_pellet {
@@ -137,7 +139,7 @@ impl GameState {
         let mut num_ghosts_eaten = 0;
         let mut did_pacman_die = false;
         let pacman_loc = self.pacman_loc;
-        for ghost in self.ghosts_mut() {
+        for ghost in &mut self.ghosts {
             if pacman_loc.collides_with(ghost.loc) {
                 // If the ghost was already eaten, skip it.
                 if ghost.is_eaten() {
@@ -221,7 +223,7 @@ impl GameState {
     /************************** Motion (Pacman Location) **************************/
 
     // Move Pacman one space in a given direction
-    pub fn move_pacman_dir(&mut self, dir: u8) {
+    pub fn move_pacman_dir(&mut self, dir: Direction) {
         // Check collisions with all the ghosts
         self.check_collisions();
 
@@ -257,7 +259,7 @@ impl GameState {
         self.ghost_combo = 0;
 
         // Loop over all the ghosts
-        for ghost in self.ghosts_mut() {
+        for ghost in &mut self.ghosts {
             /*
                 To frighten a ghost, set its fright steps to a specified value
                 and trap it for one step (to force the direction to reverse)
@@ -272,7 +274,7 @@ impl GameState {
     // Reverse all ghosts at once (similar to frightenAllGhosts)
     pub fn reverse_all_ghosts(&mut self) {
         // Loop over all the ghosts
-        for ghost in self.ghosts_mut() {
+        for ghost in &mut self.ghosts {
             /*
                 To change the direction a ghost, trap it for one step
                 (to force the direction to reverse)
@@ -289,18 +291,18 @@ impl GameState {
         self.ghost_combo = 0;
 
         // Reset each of the ghosts
-        for ghost in self.ghosts_mut() {
+        for ghost in &mut self.ghosts {
             ghost.reset();
         }
 
         // If no lives are left, set all ghosts to stare at the player, menacingly
         if self.get_lives() == 0 {
-            for ghost in self.ghosts_mut() {
-                if ghost.color != ORANGE {
-                    ghost.next_loc.dir = NONE;
+            for ghost in &mut self.ghosts {
+                if ghost.color != Orange {
+                    ghost.next_loc.dir = Stay;
                 } else {
                     // Orange does like making eye contact, unfortunately
-                    ghost.next_loc.dir = LEFT;
+                    ghost.next_loc.dir = Left;
                 }
             }
         }
@@ -309,7 +311,7 @@ impl GameState {
     // Update all ghosts at once
     pub fn update_all_ghosts(&mut self) {
         // Loop over the individual ghosts
-        for ghost in self.ghosts_mut() {
+        for ghost in &mut self.ghosts {
             ghost.update();
         }
     }
@@ -332,7 +334,8 @@ impl GameState {
 
             // If the ghost is trapped, reverse the current direction and return
             if self.ghosts[ghost_idx].is_trapped() {
-                self.ghosts[ghost_idx].next_loc.dir = self.ghosts[ghost_idx].next_loc.get_reversed_dir();
+                self.ghosts[ghost_idx].next_loc.dir =
+                    self.ghosts[ghost_idx].next_loc.dir.opposite();
                 self.ghosts[ghost_idx].dec_trapped_steps();
                 return;
             }
@@ -345,10 +348,14 @@ impl GameState {
                 Otherwise: pick chase or scatter targets, depending on the mode.
             */
             let target_loc = if self.ghosts[ghost_idx].spawning
-                && !self.ghosts[ghost_idx].loc.collides_with(GHOST_SPAWN_LOCS[RED as usize])
-                && !self.ghosts[ghost_idx].next_loc.collides_with(GHOST_SPAWN_LOCS[RED as usize])
+                && !self.ghosts[ghost_idx]
+                    .loc
+                    .collides_with(GHOST_SPAWN_LOCS[Red as usize])
+                && !self.ghosts[ghost_idx]
+                    .next_loc
+                    .collides_with(GHOST_SPAWN_LOCS[Red as usize])
             {
-                GHOST_SPAWN_LOCS[RED as usize].get_coords()
+                GHOST_SPAWN_LOCS[Red as usize].get_coords()
             } else {
                 match self.mode {
                     GameMode::CHASE => chase_target,
@@ -357,10 +364,15 @@ impl GameState {
             };
 
             // Determine which of the four neighboring moves to the next location are valid.
-            let moves = (0..NUM_DIRS as u8).map(|dir| (dir, self.ghosts[ghost_idx].next_loc.get_neighbor_coords(dir)));
-            let valid_moves = moves.filter(|&(dir, loc)| {
+            let moves = Direction::all_except_stay().map(|dir| {
+                (
+                    dir,
+                    self.ghosts[ghost_idx].next_loc.get_neighbor_coords(dir),
+                )
+            });
+            let valid_moves = moves.into_iter().filter(|&(dir, loc)| {
                 // If this move would make the ghost reverse, skip it.
-                if dir == self.ghosts[ghost_idx].next_loc.get_reversed_dir() {
+                if dir == self.ghosts[ghost_idx].next_loc.dir.opposite() {
                     return false;
                 }
 
@@ -393,7 +405,7 @@ impl GameState {
                 // Otherwise, pick the move that takes the ghost closest to its target.
                 valid_moves.min_by_key(|&(_dir, loc)| dist_sq(loc, target_loc))
             }
-                .expect("ghost has no valid moves!");
+            .expect("ghost has no valid moves!");
 
             // Once we have picked a move, set next_loc.dir to that direction.
             self.ghosts[ghost_idx].next_loc.dir = chosen_move.0;
@@ -429,7 +441,7 @@ impl GameState {
         let (pivot_row, pivot_col) = self.pacman_loc.get_ahead_coords(2);
 
         // Get the current location of the red ghost
-        let (red_row, red_col) = self.ghosts[RED as usize].loc.get_coords();
+        let (red_row, red_col) = self.ghosts[Red as usize].loc.get_coords();
 
         // Return the pair of coordinates of the calculated target
         ((2 * pivot_row - red_row), (2 * pivot_col - red_col))
@@ -445,7 +457,7 @@ impl GameState {
         let pacman_pos = self.pacman_loc.get_coords();
 
         // Get the orange ghost's current location
-        let orange_pos = self.ghosts[ORANGE as usize].loc.get_coords();
+        let orange_pos = self.ghosts[Orange as usize].loc.get_coords();
 
         // If Pacman is far enough from the ghost, return Pacman's location
         if dist_sq(orange_pos, pacman_pos) >= 64 {
@@ -453,17 +465,16 @@ impl GameState {
         }
 
         // Otherwise, return the scatter location of orange
-        self.ghosts[ORANGE as usize].scatter_target.get_coords()
+        self.ghosts[Orange as usize].scatter_target.get_coords()
     }
 
     // Returns the chase location of an arbitrary ghost color
-    pub fn get_chase_target(&self, color: u8) -> Position {
+    pub fn get_chase_target(&self, color: GhostColor) -> Position {
         match color {
-            RED => self.get_chase_target_red(),
-            PINK => self.get_chase_target_pink(),
-            CYAN => self.get_chase_target_cyan(),
-            ORANGE => self.get_chase_target_orange(),
-            _ => unreachable!(), // TODO: convert color to a proper enum
+            Red => self.get_chase_target_red(),
+            Pink => self.get_chase_target_pink(),
+            Cyan => self.get_chase_target_cyan(),
+            Orange => self.get_chase_target_orange(),
         }
     }
 }
