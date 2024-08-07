@@ -2,12 +2,15 @@ use array_init::array_init;
 use core2::io;
 use core2::io::{Cursor, Read};
 #[cfg(feature = "std")]
-use rand::{prelude::SmallRng, RngCore, SeedableRng};
+use rand::{prelude::SmallRng, Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "std")]
 use std::collections::{HashMap, VecDeque};
 
+#[cfg(feature = "std")]
 use crate::game_helpers::Position;
 use crate::ghost_state::{GhostColor, GHOST_NAMES};
+#[cfg(feature = "std")]
 use crate::location::Direction;
 use crate::{game_modes::GameMode, ghost_state::GhostState, location::LocationState, variables::*};
 

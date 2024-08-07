@@ -1,6 +1,6 @@
+use core2::io;
+use core2::io::ErrorKind;
 use serde::{Deserialize, Serialize};
-use std::io;
-use std::io::ErrorKind;
 
 use Direction::*;
 
