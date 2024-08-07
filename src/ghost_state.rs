@@ -37,7 +37,7 @@ pub const GHOST_NAMES: [GhostColor; 4] = [Red, Pink, Cyan, Orange];
 /*
 An object to keep track of the location and attributes of a ghost
 */
-#[derive(Clone, Debug, Serialize, Deserialize, PartialOrd, PartialEq)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialOrd, PartialEq)]
 pub struct GhostState {
     pub loc: LocationState,            // Current location
     pub next_loc: LocationState,       // Planned location (for next update)
@@ -136,5 +136,20 @@ impl GhostState {
     /// Check if a ghost is eaten.
     pub fn is_eaten(&self) -> bool {
         self.eaten
+    }
+
+    pub fn from_bytes(color: GhostColor, location: LocationState, aux: u8) -> Self {
+        let mut s = Self {
+            loc: location,
+            next_loc: location, // planning happens after all ghosts are initialized
+            scatter_target: GHOST_SCATTER_TARGETS[color as usize],
+            color,
+            trapped_steps: 0, // todo
+            fright_steps: 0,  // aux
+            spawning: false,  // aux
+            eaten: false,     // setting this would not currently have any effect
+        };
+        s.update_aux(aux);
+        s
     }
 }

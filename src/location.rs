@@ -1,4 +1,6 @@
 use serde::{Deserialize, Serialize};
+use std::io;
+use std::io::ErrorKind;
 
 use Direction::*;
 
@@ -139,34 +141,34 @@ impl LocationState {
         (self.row, self.col) = coords;
     }
 
-    pub fn update(&mut self, loc_uint16: u16) {
-        // Get the row and column bytes
-        let row_uint8: u8 = (loc_uint16 >> 8) as u8;
-        let col_uint8: u8 = (loc_uint16 & 0xff) as u8;
-
-        // Get the row direction (2's complement of first 2 bits)
-        // TODO I don't know why this is different
-        // self.rowDir = (row_uint8 >> 6) as i8;
-        // if self.rowDir >= 2 {
-        //     self.rowDir -= 4;
-        // }
-
-        // Get the row value (last 6 bits)
-        self.row = (row_uint8 & 0x3f) as i8;
-
-        // Get the col direction (2's complement of first 2 bits)
-        // TODO I don't know why this is different
-        // self.colDir = (col_uint8 >> 6) as i8;
-        // if self.colDir >= 2 {
-        //     self.colDir -= 4;
-        // }
-
-        // Get the column value (last 6 bits)
-        self.col = (col_uint8 & 0x3f) as i8;
+    pub fn to_bytes(&self) -> [u8; 2] {
+        let i8s = [
+            (self.dir.vector().0 << 6) | self.row,
+            (self.dir.vector().1 << 6) | self.col,
+        ];
+        i8s.map(|x| x.to_be_bytes()[0])
     }
 
-    pub fn to_uint16(&self) -> u16 {
-        (self.row as u16) << 8 | self.col as u16
+    pub fn from_bytes(bytes: [u8; 2]) -> io::Result<Self> {
+        let bytes = bytes.map(|x| i8::from_be_bytes([x]));
+
+        // Get the row and column bytes
+        let row: i8 = bytes[0] & 0b00111111;
+        let col: i8 = bytes[1] & 0b00111111;
+
+        let d_row: i8 = bytes[0] >> 6;
+        let d_col: i8 = bytes[0] >> 6;
+
+        let dir = match (d_row, d_col) {
+            (0, 0) => Stay,
+            (-1, 0) => Up,
+            (1, 0) => Down,
+            (0, -1) => Left,
+            (0, 1) => Right,
+            _ => return Err(io::Error::from(ErrorKind::InvalidInput)),
+        };
+
+        Ok(Self { row, col, dir })
     }
 }
 
