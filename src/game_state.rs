@@ -88,7 +88,7 @@ impl GameState {
     /// Creates a new game state with default values.
     #[cfg(feature = "std")]
     pub fn new() -> Self {
-        Self::new_with_seed(SmallRng::from_entropy().next_u64())
+        Self::new_with_seed(SmallRng::from_entropy().gen())
     }
 
     /// Creates a new game state with default values.
