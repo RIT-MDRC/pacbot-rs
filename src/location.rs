@@ -157,7 +157,7 @@ impl LocationState {
         let col: i8 = bytes[1] & 0b00111111;
 
         let d_row: i8 = bytes[0] >> 6;
-        let d_col: i8 = bytes[0] >> 6;
+        let d_col: i8 = bytes[1] >> 6;
 
         let dir = match (d_row, d_col) {
             (0, 0) => Stay,
