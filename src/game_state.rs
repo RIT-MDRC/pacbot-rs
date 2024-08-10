@@ -164,19 +164,24 @@ impl GameState {
             2 => (GameMode::CHASE, false),
             _ => unreachable!(),
         };
-        let mode = mode;
-        let paused = paused;
         let mode_steps = get_u8(&mut cursor)?;
         let _mode_duration = get_u8(&mut cursor)?;
+        let level_steps = get_u16(&mut cursor)?;
         let curr_score = get_u16(&mut cursor)?;
         let curr_level = get_u8(&mut cursor)?;
         let curr_lives = get_u8(&mut cursor)?;
+        let ghost_combo = get_u8(&mut cursor)?;
 
         // ghost info
-        let mut ghosts = [GhostState::from_bytes(GhostColor::Red, EMPTY_LOC, 0); 4];
+        let mut ghosts = [GhostState::from_bytes(GhostColor::Red, EMPTY_LOC, 0, 0); 4];
         for (i, g) in ghosts.iter_mut().enumerate() {
             let loc = LocationState::from_bytes([get_u8(&mut cursor)?, get_u8(&mut cursor)?])?;
-            *g = GhostState::from_bytes(GHOST_NAMES[i], loc, get_u8(&mut cursor)?)
+            *g = GhostState::from_bytes(
+                GHOST_NAMES[i],
+                loc,
+                get_u8(&mut cursor)?,
+                get_u8(&mut cursor)?,
+            )
         }
 
         // pacman location info
@@ -196,7 +201,7 @@ impl GameState {
             mode,
             paused,
             mode_steps,
-            level_steps: 0, // todo based on curr_ticks
+            level_steps,
             curr_score,
             curr_level,
             curr_lives,
@@ -204,7 +209,7 @@ impl GameState {
             fruit_loc,
             fruit_steps,
             ghosts,
-            ghost_combo: 0, // todo
+            ghost_combo,
             num_pellets: pellets.iter().map(|x| x.count_ones()).sum::<u32>() as u16,
             pellets,
             walls: INIT_WALLS,
@@ -234,15 +239,18 @@ impl GameState {
             (GameMode::CHASE, false) => GameMode::CHASE.duration(),
             _ => 255,
         });
+        b.append(&mut self.level_steps.to_be_bytes().to_vec());
         b.append(&mut self.curr_score.to_be_bytes().to_vec());
         b.push(self.curr_level);
         b.push(self.curr_lives);
+        b.push(self.ghost_combo);
 
         // ghost info
         for g in 0..4 {
             let ghost = &self.ghosts[g];
             b.append(&mut ghost.loc.to_bytes().to_vec());
             b.push(ghost.get_aux());
+            b.push(ghost.get_aux2());
         }
 
         // pacman location
