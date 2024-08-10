@@ -70,9 +70,22 @@ impl GhostState {
         self.spawning = (aux_info >> 7) != 0;
     }
 
+    pub fn update_aux2(&mut self, aux2: u8) {
+        self.trapped_steps = aux2 & 0x3f;
+        self.eaten = (aux2 >> 7) != 0;
+    }
+
     pub fn get_aux(&self) -> u8 {
         let mut aux_info = self.fright_steps & 0x3f;
         if self.spawning {
+            aux_info |= 1 << 7;
+        }
+        aux_info
+    }
+
+    pub fn get_aux2(&self) -> u8 {
+        let mut aux_info = self.trapped_steps & 0x3f;
+        if self.eaten {
             aux_info |= 1 << 7;
         }
         aux_info
@@ -138,18 +151,19 @@ impl GhostState {
         self.eaten
     }
 
-    pub fn from_bytes(color: GhostColor, location: LocationState, aux: u8) -> Self {
+    pub fn from_bytes(color: GhostColor, location: LocationState, aux: u8, aux2: u8) -> Self {
         let mut s = Self {
             loc: location,
             next_loc: location, // planning happens after all ghosts are initialized
             scatter_target: GHOST_SCATTER_TARGETS[color as usize],
             color,
-            trapped_steps: 0, // todo
+            trapped_steps: 0, // aux2
             fright_steps: 0,  // aux
             spawning: false,  // aux
-            eaten: false,     // setting this would not currently have any effect
+            eaten: false,     // aux2
         };
         s.update_aux(aux);
+        s.update_aux2(aux2);
         s
     }
 }
