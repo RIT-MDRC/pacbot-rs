@@ -292,6 +292,7 @@ impl GameState {
     pub fn set_pacman_location(&mut self, location: Position) {
         // Check if there is a wall at the anticipated location, and return if so
         if !self.in_bounds(location) || self.wall_at(location) {
+            eprintln!("set_pacman_location out of bounds at {location:?}");
             return;
         }
         let likely_path = self.bfs((self.pacman_loc.row, self.pacman_loc.col), location);
@@ -308,6 +309,9 @@ impl GameState {
 
     #[cfg(feature = "std")]
     pub fn bfs(&self, start: Position, end: Position) -> Option<Vec<LocationState>> {
+        if start == end {
+            return Some(vec![]);
+        }
         let mut visited: HashMap<Position, Option<(Position, Direction)>> = HashMap::new();
         let mut queue: VecDeque<Position> = VecDeque::new();
         queue.push_back(start);
